@@ -98,14 +98,14 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
       ? !!formData.anthropicApiKey
       : !!formData.openrouterApiKey && (isCustomModel ? !!customModel : true);
 
-  const isValid = isProviderConfigured && !!formData.pageindexApiUrl && !!formData.pageindexApiKey;
+  const isValid = isProviderConfigured && !!formData.pageindexApiUrl && !!formData.pageindexMcpToken;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
-          <DialogDescription>Configure your API keys to use this chat demo.</DialogDescription>
+          <DialogDescription>Configure your API keys and MCP token to use this chat demo.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -219,14 +219,14 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="pageindex-api-key" className="text-sm font-medium">
-              PageIndex API Key
+            <label htmlFor="pageindex-mcp-token" className="text-sm font-medium">
+              PageIndex MCP Token
             </label>
             <Input
-              id="pageindex-api-key"
+              id="pageindex-mcp-token"
               type="password"
-              value={formData.pageindexApiKey}
-              onChange={(e) => setFormData({ ...formData, pageindexApiKey: e.target.value })}
+              value={formData.pageindexMcpToken}
+              onChange={(e) => setFormData({ ...formData, pageindexMcpToken: e.target.value })}
             />
           </div>
         </div>

@@ -14,7 +14,7 @@ export class McpTransport {
   private folderScope: string | undefined;
 
   constructor(
-    private config: { apiUrl: string; apiKey: string; folderScope?: string },
+    private config: { apiUrl: string; mcpToken: string; folderScope?: string },
   ) {
     this.folderScope = config.folderScope;
   }
@@ -36,7 +36,7 @@ export class McpTransport {
     url.searchParams.set("local_upload", "1");
     url.searchParams.set("folder", "1");
     const headers: Record<string, string> = {
-      Authorization: `Bearer ${this.config.apiKey}`,
+      Authorization: `Bearer ${this.config.mcpToken}`,
     };
     if (this.folderScope) {
       headers["X-Folder-Scope"] = this.folderScope;

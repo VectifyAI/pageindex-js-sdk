@@ -23,7 +23,7 @@ pnpm dev
 Visit `http://localhost:3000`. First-time setup requires configuring in settings:
 - Anthropic API Key
 - PageIndex API URL
-- PageIndex API Key
+- PageIndex MCP Token
 
 ## Tech Stack
 
@@ -68,7 +68,7 @@ import { buildPageIndexTools } from "@/lib/tools";
 export async function POST(request: Request) {
   const client = new PageIndexClient({
     apiUrl: "https://chat.pageindex.ai",
-    apiKey: "your-key",
+    mcpToken: "your-mcp-token",
   });
 
   await client.connect();

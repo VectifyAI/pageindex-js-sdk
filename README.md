@@ -24,7 +24,7 @@ import { PageIndexClient } from '@pageindex/mcp-sdk';
 
 const client = new PageIndexClient({
   apiUrl: 'https://chat.pageindex.ai',
-  apiKey: 'your-api-key',
+  mcpToken: 'your-mcp-token',
 });
 
 await client.connect();
@@ -37,7 +37,7 @@ await client.close();
 ### Client
 
 ```typescript
-const client = new PageIndexClient({ apiUrl, apiKey, folderScope? });
+const client = new PageIndexClient({ apiUrl, mcpToken, folderScope? });
 
 await client.connect();
 await client.setFolderScope(folderId);

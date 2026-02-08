@@ -14,7 +14,7 @@ function getClient(req: Request) {
   // because users need to see all folders to select one
   return new PageIndexClient({
     apiUrl: config.pageindexApiUrl,
-    apiKey: config.pageindexApiKey,
+    mcpToken: config.pageindexMcpToken,
   });
 }
 

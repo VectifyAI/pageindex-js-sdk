@@ -12,7 +12,7 @@ function getClient(req: Request) {
 
   return new PageIndexClient({
     apiUrl: config.pageindexApiUrl,
-    apiKey: config.pageindexApiKey,
+    mcpToken: config.pageindexMcpToken,
     folderScope: config.folderScope,
   });
 }

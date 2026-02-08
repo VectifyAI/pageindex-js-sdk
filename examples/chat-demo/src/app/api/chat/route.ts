@@ -106,7 +106,7 @@ export async function POST(req: Request) {
 
   const pageIndexClient = new PageIndexClient({
     apiUrl: config.pageindexApiUrl,
-    apiKey: config.pageindexApiKey,
+    mcpToken: config.pageindexMcpToken,
     folderScope: config.folderScope,
   });
 

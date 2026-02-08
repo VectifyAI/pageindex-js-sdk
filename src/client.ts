@@ -3,7 +3,7 @@ import { McpTransport } from "./transport.js";
 
 export interface PageIndexClientConfig {
   apiUrl: string;
-  apiKey: string;
+  mcpToken: string;
   folderScope?: string;
 }
 
@@ -14,7 +14,7 @@ export class PageIndexClient {
   constructor(config: PageIndexClientConfig) {
     this.transport = new McpTransport({
       apiUrl: config.apiUrl.replace(/\/$/, ""),
-      apiKey: config.apiKey,
+      mcpToken: config.mcpToken,
       folderScope: config.folderScope,
     });
   }
