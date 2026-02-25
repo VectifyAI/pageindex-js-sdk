@@ -31,7 +31,6 @@ function handleError(error: unknown, defaultMessage: string) {
 export async function GET(req: Request) {
   try {
     const client = getClient(req);
-    await client.connect();
 
     // Get root-level folders only
     const result = await client.tools.listFolders({ parentFolderId: 'root' });

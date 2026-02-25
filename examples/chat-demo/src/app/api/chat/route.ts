@@ -110,10 +110,6 @@ export async function POST(req: Request) {
     folderScope: config.folderScope,
   });
 
-  if (!pageIndexClient.isConnected()) {
-    await pageIndexClient.connect();
-  }
-
   const tools = buildPageIndexTools(pageIndexClient);
 
   const result = streamText({
