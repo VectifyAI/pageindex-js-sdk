@@ -92,6 +92,9 @@ export interface ChatCompletionsParams {
   doc_ids?: string[];
   model?: string;
   stream?: boolean;
+  temperature?: number;
+  enable_citations?: boolean;
+  stream_metadata?: boolean;
 }
 
 export interface ChatCompletionsResponse {
@@ -109,13 +112,4 @@ export interface ChatCompletionsResponse {
     completion_tokens: number;
     total_tokens: number;
   };
-}
-
-export interface ProcessMarkdownOptions {
-  mode?: string;
-  folderId?: string;
-}
-
-export interface ProcessMarkdownResponse {
-  doc_id: string;
 }

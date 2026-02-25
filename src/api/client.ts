@@ -10,8 +10,6 @@ import type {
   GetTreeResponse,
   ListDocumentsOptions,
   ListDocumentsResponse,
-  ProcessMarkdownOptions,
-  ProcessMarkdownResponse,
   SubmitDocumentOptions,
   SubmitDocumentResponse,
 } from "./types.js";
@@ -119,28 +117,6 @@ export class PageIndexApi {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(params),
     });
-  }
-
-  async processMarkdown(
-    file: Blob | Buffer | ArrayBuffer,
-    fileName: string,
-    options?: ProcessMarkdownOptions,
-  ): Promise<ProcessMarkdownResponse> {
-    const formData = new FormData();
-    const blob =
-      file instanceof Blob ? file : new Blob([file], { type: "text/markdown" });
-    formData.append("file", blob, fileName);
-    if (options?.mode) {
-      formData.append("mode", options.mode);
-    }
-    const folderId = options?.folderId ?? this.folderScope;
-    if (folderId) {
-      formData.append("folder_id", folderId);
-    }
-    return this.requestMultipart<ProcessMarkdownResponse>(
-      "/markdown/",
-      formData,
-    );
   }
 
   private async request<T>(path: string, init?: RequestInit): Promise<T> {

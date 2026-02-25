@@ -100,8 +100,6 @@ const chat = await client.api.chatCompletions({
   doc_id: docId,
 });
 
-// Process markdown
-const md = await client.api.processMarkdown(file, 'notes.md');
 ```
 
 ### Error Handling
