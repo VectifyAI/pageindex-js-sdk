@@ -8,7 +8,7 @@ export type Provider = 'anthropic' | 'openrouter';
 
 export interface Settings {
   pageindexApiUrl: string;
-  pageindexMcpToken: string;
+  pageindexApiKey: string;
   folderScope?: string;
 
   provider: Provider;
@@ -31,8 +31,8 @@ interface SettingsContextValue {
 }
 
 const defaultSettings: Settings = {
-  pageindexApiUrl: 'https://chat.pageindex.ai',
-  pageindexMcpToken: '',
+  pageindexApiUrl: 'https://api.pageindex.ai',
+  pageindexApiKey: '',
   provider: 'anthropic',
   anthropicApiKey: '',
   anthropicModel: 'claude-sonnet-4-5-20250929',
@@ -77,7 +77,7 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
       : !!settings.openrouterApiKey;
 
   const isConfigured =
-    isProviderConfigured && !!settings.pageindexApiUrl && !!settings.pageindexMcpToken;
+    isProviderConfigured && !!settings.pageindexApiUrl && !!settings.pageindexApiKey;
 
   const getHeaders = useCallback(() => {
     const headers: Record<string, string> = {};
@@ -103,8 +103,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     if (settings.pageindexApiUrl) {
       headers['x-pageindex-api-url'] = settings.pageindexApiUrl;
     }
-    if (settings.pageindexMcpToken) {
-      headers['x-pageindex-mcp-token'] = settings.pageindexMcpToken;
+    if (settings.pageindexApiKey) {
+      headers['x-pageindex-api-key'] = settings.pageindexApiKey;
     }
     if (settings.folderScope) {
       headers['x-folder-scope'] = settings.folderScope;

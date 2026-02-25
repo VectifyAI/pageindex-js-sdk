@@ -30,11 +30,6 @@ import {
   listFolders,
 } from "./list-folders.js";
 import {
-  type ProcessDocumentParams,
-  type ProcessDocumentResult,
-  processDocument,
-} from "./process-document.js";
-import {
   type RecentDocumentsResult,
   recentDocuments,
 } from "./recent-documents.js";
@@ -43,12 +38,6 @@ import {
   type RemoveDocumentResult,
   removeDocument,
 } from "./remove-document.js";
-import {
-  type UploadDocumentParams,
-  type UploadDocumentResult,
-  type UploadPhase,
-  uploadDocument,
-} from "./upload-document.js";
 
 export type { NextSteps } from "./types.js";
 export type {
@@ -57,10 +46,6 @@ export type {
   FolderItem,
 } from "./create-folder.js";
 export type { ListFoldersParams, ListFoldersResult } from "./list-folders.js";
-export type {
-  ProcessDocumentParams,
-  ProcessDocumentResult,
-} from "./process-document.js";
 export type {
   RecentDocumentItem,
   RecentDocumentsResult,
@@ -84,18 +69,9 @@ export type {
   RemoveDocumentParams,
   RemoveDocumentResult,
 } from "./remove-document.js";
-export type {
-  UploadDocumentParams,
-  UploadDocumentResult,
-  UploadPhase,
-} from "./upload-document.js";
 
 export class PageIndexTools {
   constructor(private transport: McpTransport) {}
-
-  processDocument = (
-    params: ProcessDocumentParams,
-  ): Promise<ProcessDocumentResult> => processDocument(this.transport, params);
 
   recentDocuments = (): Promise<RecentDocumentsResult> =>
     recentDocuments(this.transport);
@@ -126,8 +102,4 @@ export class PageIndexTools {
   removeDocument = (
     params: RemoveDocumentParams,
   ): Promise<RemoveDocumentResult> => removeDocument(this.transport, params);
-
-  uploadDocument = (
-    params: UploadDocumentParams,
-  ): Promise<UploadDocumentResult> => uploadDocument(this.transport, params);
 }

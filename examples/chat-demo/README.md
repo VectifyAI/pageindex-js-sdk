@@ -1,6 +1,6 @@
 # Chat Demo
 
-A complete Next.js application demonstrating `@pageindex/mcp-sdk` integration with AI chat.
+A complete Next.js application demonstrating `@pageindex/sdk` integration with AI chat.
 
 ## Features
 
@@ -23,7 +23,7 @@ pnpm dev
 Visit `http://localhost:3000`. First-time setup requires configuring in settings:
 - Anthropic API Key
 - PageIndex API URL
-- PageIndex MCP Token
+- PageIndex API Key
 
 ## Tech Stack
 
@@ -40,7 +40,7 @@ Visit `http://localhost:3000`. First-time setup requires configuring in settings
 // lib/tools.ts
 import { tool } from "ai";
 import { z } from "zod";
-import { PageIndexClient } from "@pageindex/mcp-sdk";
+import { PageIndexClient } from "@pageindex/sdk";
 
 export function buildPageIndexTools(client: PageIndexClient) {
   return {
@@ -62,13 +62,12 @@ export function buildPageIndexTools(client: PageIndexClient) {
 // api/chat/route.ts
 import { streamText, convertToModelMessages } from "ai";
 import { anthropic } from "@ai-sdk/anthropic";
-import { PageIndexClient } from "@pageindex/mcp-sdk";
+import { PageIndexClient } from "@pageindex/sdk";
 import { buildPageIndexTools } from "@/lib/tools";
 
 export async function POST(request: Request) {
   const client = new PageIndexClient({
-    apiUrl: "https://chat.pageindex.ai",
-    mcpToken: "your-mcp-token",
+    apiKey: "your-api-key",
   });
 
   await client.connect();

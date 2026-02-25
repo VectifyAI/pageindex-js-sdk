@@ -7,7 +7,7 @@ import {
   type UIMessage,
   type LanguageModel,
 } from 'ai';
-import { PageIndexClient } from '@pageindex/mcp-sdk';
+import { PageIndexClient } from '@pageindex/sdk';
 import { buildPageIndexTools } from '@/lib/tools';
 import { getConfigFromRequest, validateConfig } from '@/lib/config';
 
@@ -106,13 +106,9 @@ export async function POST(req: Request) {
 
   const pageIndexClient = new PageIndexClient({
     apiUrl: config.pageindexApiUrl,
-    mcpToken: config.pageindexMcpToken,
+    apiKey: config.pageindexApiKey,
     folderScope: config.folderScope,
   });
-
-  if (!pageIndexClient.isConnected()) {
-    await pageIndexClient.connect();
-  }
 
   const tools = buildPageIndexTools(pageIndexClient);
 

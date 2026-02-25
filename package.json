@@ -1,7 +1,7 @@
 {
-  "name": "@pageindex/mcp-sdk",
+  "name": "@pageindex/sdk",
   "version": "0.3.0",
-  "description": "PageIndex MCP SDK - Document processing tools for AI agents via Model Context Protocol",
+  "description": "PageIndex SDK - Document processing for AI applications via REST API and MCP",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
@@ -45,16 +45,16 @@
   "author": "VectifyAI",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/VectifyAI/pageindex-mcp-sdk.git"
+    "url": "git+https://github.com/VectifyAI/pageindex-js-sdk.git"
   },
-  "homepage": "https://github.com/VectifyAI/pageindex-mcp-sdk#readme",
+  "homepage": "https://github.com/VectifyAI/pageindex-js-sdk#readme",
   "bugs": {
-    "url": "https://github.com/VectifyAI/pageindex-mcp-sdk/issues"
+    "url": "https://github.com/VectifyAI/pageindex-js-sdk/issues"
   },
   "keywords": [
     "pageindex",
-    "mcp",
-    "model-context-protocol",
+    "document-processing",
+    "rest-api",
     "document",
     "pdf",
     "ai",

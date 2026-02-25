@@ -1,4 +1,4 @@
-import { PageIndexClient, PageIndexError } from '@pageindex/mcp-sdk';
+import { PageIndexClient, PageIndexError } from '@pageindex/sdk';
 import { NextResponse } from 'next/server';
 import { getConfigFromRequest, validatePageIndexConfig } from '@/lib/config';
 
@@ -14,7 +14,7 @@ function getClient(req: Request) {
   // because users need to see all folders to select one
   return new PageIndexClient({
     apiUrl: config.pageindexApiUrl,
-    mcpToken: config.pageindexMcpToken,
+    apiKey: config.pageindexApiKey,
   });
 }
 
@@ -31,7 +31,6 @@ function handleError(error: unknown, defaultMessage: string) {
 export async function GET(req: Request) {
   try {
     const client = getClient(req);
-    await client.connect();
 
     // Get root-level folders only
     const result = await client.tools.listFolders({ parentFolderId: 'root' });

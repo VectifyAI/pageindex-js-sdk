@@ -2,7 +2,7 @@ export type Provider = 'anthropic' | 'openrouter';
 
 export interface ApiConfig {
   pageindexApiUrl: string;
-  pageindexMcpToken: string;
+  pageindexApiKey: string;
   folderScope?: string;
 
   provider: Provider;
@@ -22,8 +22,8 @@ export function getConfigFromRequest(req: Request): ApiConfig {
   return {
     pageindexApiUrl:
       req.headers.get('x-pageindex-api-url') || process.env.PAGEINDEX_API_URL || '',
-    pageindexMcpToken:
-      req.headers.get('x-pageindex-mcp-token') || process.env.PAGEINDEX_MCP_TOKEN || '',
+    pageindexApiKey:
+      req.headers.get('x-pageindex-api-key') || process.env.PAGEINDEX_API_KEY || '',
     folderScope: req.headers.get('x-folder-scope') || undefined,
 
     provider,
@@ -50,13 +50,13 @@ export function validateConfig(config: ApiConfig): { valid: boolean; missing: st
   }
 
   if (!config.pageindexApiUrl) missing.push('PageIndex API URL');
-  if (!config.pageindexMcpToken) missing.push('PageIndex MCP Token');
+  if (!config.pageindexApiKey) missing.push('PageIndex API Key');
   return { valid: missing.length === 0, missing };
 }
 
 export function validatePageIndexConfig(config: ApiConfig): { valid: boolean; missing: string[] } {
   const missing: string[] = [];
   if (!config.pageindexApiUrl) missing.push('PageIndex API URL');
-  if (!config.pageindexMcpToken) missing.push('PageIndex MCP Token');
+  if (!config.pageindexApiKey) missing.push('PageIndex API Key');
   return { valid: missing.length === 0, missing };
 }
