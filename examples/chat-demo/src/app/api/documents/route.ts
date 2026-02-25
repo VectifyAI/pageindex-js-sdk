@@ -1,4 +1,4 @@
-import { PageIndexClient, PageIndexError } from '@pageindex/mcp-sdk';
+import { PageIndexClient, PageIndexError } from '@pageindex/sdk';
 import { NextResponse } from 'next/server';
 import { getConfigFromRequest, validatePageIndexConfig } from '@/lib/config';
 
@@ -12,7 +12,7 @@ function getClient(req: Request) {
 
   return new PageIndexClient({
     apiUrl: config.pageindexApiUrl,
-    mcpToken: config.pageindexMcpToken,
+    apiKey: config.pageindexApiKey,
     folderScope: config.folderScope,
   });
 }
@@ -30,16 +30,10 @@ function handleError(error: unknown, defaultMessage: string) {
 export async function GET(req: Request) {
   try {
     const client = getClient(req);
-    await client.connect();
-
-    const result = await client.tools.recentDocuments();
+    const result = await client.api.listDocuments({ limit: 20 });
 
     return NextResponse.json({
-      docs: result.docs,
-      totalShown: result.total_shown,
-      processingCount: result.processing_count,
-      readyCount: result.ready_count,
-      failedCount: result.failed_count,
+      docs: result.documents,
     });
   } catch (error) {
     console.error('Failed to fetch recent documents:', error);

@@ -1,4 +1,4 @@
-import { PageIndexClient, PageIndexError, type GetDocumentResult } from '@pageindex/mcp-sdk';
+import { PageIndexClient, PageIndexError, type GetDocumentMetadataResponse } from '@pageindex/sdk';
 import { NextResponse } from 'next/server';
 import { getConfigFromRequest, validatePageIndexConfig } from '@/lib/config';
 
@@ -12,41 +12,37 @@ function getClient(req: Request) {
 
   return new PageIndexClient({
     apiUrl: config.pageindexApiUrl,
-    mcpToken: config.pageindexMcpToken,
+    apiKey: config.pageindexApiKey,
     folderScope: config.folderScope,
   });
 }
 
 export async function POST(req: Request) {
   try {
-    const { docNames } = (await req.json()) as { docNames: string[] };
+    const { docIds } = (await req.json()) as { docIds: string[] };
 
-    if (!docNames || !Array.isArray(docNames) || docNames.length === 0) {
-      return NextResponse.json({ error: 'docNames array is required' }, { status: 400 });
+    if (!docIds || !Array.isArray(docIds) || docIds.length === 0) {
+      return NextResponse.json({ error: 'docIds array is required' }, { status: 400 });
     }
 
-    if (docNames.length > 10) {
+    if (docIds.length > 10) {
       return NextResponse.json({ error: 'Maximum 10 documents allowed' }, { status: 400 });
     }
 
     const client = getClient(req);
-    await client.connect();
 
     const results = await Promise.allSettled(
-      docNames.map(async (docName) => {
-        const doc = await client.tools.getDocument({ docName });
-        return { docName, detail: doc };
-      }),
+      docIds.map((docId) => client.api.getDocument(docId)),
     );
 
-    const documents: GetDocumentResult[] = [];
+    const documents: GetDocumentMetadataResponse[] = [];
     const errors: string[] = [];
 
     results.forEach((result, index) => {
       if (result.status === 'fulfilled') {
-        documents.push(result.value.detail);
+        documents.push(result.value);
       } else {
-        errors.push(docNames[index]);
+        errors.push(docIds[index]);
       }
     });
 

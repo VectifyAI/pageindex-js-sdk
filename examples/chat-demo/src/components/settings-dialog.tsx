@@ -98,14 +98,14 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
       ? !!formData.anthropicApiKey
       : !!formData.openrouterApiKey && (isCustomModel ? !!customModel : true);
 
-  const isValid = isProviderConfigured && !!formData.pageindexApiUrl && !!formData.pageindexMcpToken;
+  const isValid = isProviderConfigured && !!formData.pageindexApiUrl && !!formData.pageindexApiKey;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent showCloseButton={false}>
         <DialogHeader>
           <DialogTitle>Settings</DialogTitle>
-          <DialogDescription>Configure your API keys and MCP token to use this chat demo.</DialogDescription>
+          <DialogDescription>Configure your API keys to use this chat demo.</DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -212,21 +212,21 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
             <Input
               id="pageindex-api-url"
               type="url"
-              placeholder="https://chat.pageindex.ai"
+              placeholder="https://api.pageindex.ai"
               value={formData.pageindexApiUrl}
               onChange={(e) => setFormData({ ...formData, pageindexApiUrl: e.target.value })}
             />
           </div>
 
           <div className="space-y-2">
-            <label htmlFor="pageindex-mcp-token" className="text-sm font-medium">
-              PageIndex MCP Token
+            <label htmlFor="pageindex-api-key" className="text-sm font-medium">
+              PageIndex API Key
             </label>
             <Input
-              id="pageindex-mcp-token"
+              id="pageindex-api-key"
               type="password"
-              value={formData.pageindexMcpToken}
-              onChange={(e) => setFormData({ ...formData, pageindexMcpToken: e.target.value })}
+              value={formData.pageindexApiKey}
+              onChange={(e) => setFormData({ ...formData, pageindexApiKey: e.target.value })}
             />
           </div>
         </div>

@@ -1,4 +1,4 @@
-import { PageIndexClient, PageIndexError } from '@pageindex/mcp-sdk';
+import { PageIndexClient, PageIndexError } from '@pageindex/sdk';
 import { NextResponse } from 'next/server';
 import { getConfigFromRequest, validatePageIndexConfig } from '@/lib/config';
 
@@ -14,7 +14,7 @@ function getClient(req: Request) {
   // because users need to see all folders to select one
   return new PageIndexClient({
     apiUrl: config.pageindexApiUrl,
-    mcpToken: config.pageindexMcpToken,
+    apiKey: config.pageindexApiKey,
   });
 }
 

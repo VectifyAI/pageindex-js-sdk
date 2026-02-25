@@ -1,4 +1,4 @@
-import { PageIndexClient, PageIndexError } from '@pageindex/mcp-sdk';
+import { PageIndexClient, PageIndexError } from '@pageindex/sdk';
 import { NextResponse } from 'next/server';
 import { getConfigFromRequest, validatePageIndexConfig } from '@/lib/config';
 
@@ -12,22 +12,16 @@ function getClient(req: Request) {
 
   return new PageIndexClient({
     apiUrl: config.pageindexApiUrl,
-    mcpToken: config.pageindexMcpToken,
+    apiKey: config.pageindexApiKey,
     folderScope: config.folderScope,
   });
 }
 
 function handleError(error: unknown, defaultMessage: string) {
   if (error instanceof PageIndexError) {
-    const details = error.details as { phase?: string; serverFileName?: string } | undefined;
     return NextResponse.json(
-      {
-        error: error.message,
-        code: error.code,
-        phase: details?.phase,
-        serverFileName: details?.serverFileName,
-      },
-      { status: 500 },
+      { error: error.message, code: error.code },
+      { status: error.statusCode || 500 },
     );
   }
   if (error instanceof Error) {
@@ -46,23 +40,13 @@ export async function POST(req: Request) {
     }
 
     const client = getClient(req);
-    await client.connect();
 
     const fileBuffer = Buffer.from(await file.arrayBuffer());
 
-    const result = await client.tools.uploadDocument({
-      fileName: file.name,
-      fileType: file.type || 'application/octet-stream',
-      fileContent: fileBuffer,
-    });
+    const result = await client.api.submitDocument(fileBuffer, file.name);
 
     return NextResponse.json({
-      serverFileName: result.serverFileName,
-      originalName: result.originalName,
-      docName: result.docName,
-      status: result.status,
-      submittedAt: result.submittedAt,
-      estimatedCompletion: result.estimatedCompletion,
+      docId: result.doc_id,
     });
   } catch (error) {
     console.error('Failed to upload document:', error);

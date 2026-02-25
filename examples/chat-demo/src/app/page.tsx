@@ -239,8 +239,7 @@ function ChatContent() {
   const getFolderScopeLabel = useCallback(() => {
     if (!settings.folderScope) return 'All Folders';
     if (settings.folderScope === 'root') return 'Root Only';
-    const folderId = settings.folderScope.replace('folder:', '');
-    const folder = folders.find((f) => f.id === folderId);
+    const folder = folders.find((f) => f.id === settings.folderScope);
     return folder?.name || 'Folder';
   }, [settings.folderScope, folders]);
 
@@ -258,11 +257,11 @@ function ChatContent() {
 
     setIsSending(true);
     try {
-      const docNames = selectedDocs.map((d) => d.name);
+      const docIds = selectedDocs.map((d) => d.id);
       const res = await fetch('/api/documents/details', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...headers },
-        body: JSON.stringify({ docNames }),
+        body: JSON.stringify({ docIds }),
       });
 
       if (!res.ok) {
@@ -507,7 +506,7 @@ function ChatContent() {
                   <SelectItem value="root">Root Only</SelectItem>
                   {folders.length > 0 && <SelectSeparator />}
                   {folders.map((folder) => (
-                    <SelectItem key={folder.id} value={`folder:${folder.id}`}>
+                    <SelectItem key={folder.id} value={folder.id}>
                       {folder.name}
                     </SelectItem>
                   ))}

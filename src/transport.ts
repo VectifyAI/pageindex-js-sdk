@@ -12,11 +12,33 @@ export class McpTransport {
   private transport: StreamableHTTPClientTransport | null = null;
   private connected = false;
   private folderScope: string | undefined;
+  private idleTimeout: number;
+  private idleTimer: ReturnType<typeof setTimeout> | null = null;
 
   constructor(
-    private config: { apiUrl: string; mcpToken: string; folderScope?: string },
+    private config: {
+      apiUrl: string;
+      apiKey: string;
+      folderScope?: string;
+      idleTimeout?: number;
+    },
   ) {
     this.folderScope = config.folderScope;
+    this.idleTimeout = config.idleTimeout ?? 60_000;
+  }
+
+  private resetIdleTimer(): void {
+    if (this.idleTimer) clearTimeout(this.idleTimer);
+    if (this.idleTimeout > 0) {
+      this.idleTimer = setTimeout(() => this.close(), this.idleTimeout);
+    }
+  }
+
+  private clearIdleTimer(): void {
+    if (this.idleTimer) {
+      clearTimeout(this.idleTimer);
+      this.idleTimer = null;
+    }
   }
 
   async setFolderScope(scope: string | undefined): Promise<void> {
@@ -33,10 +55,9 @@ export class McpTransport {
   async connect(): Promise<void> {
     if (this.connected) return;
     const url = new URL("/mcp", this.config.apiUrl);
-    url.searchParams.set("local_upload", "1");
     url.searchParams.set("folder", "1");
     const headers: Record<string, string> = {
-      Authorization: `Bearer ${this.config.mcpToken}`,
+      Authorization: `Bearer ${this.config.apiKey}`,
     };
     if (this.folderScope) {
       headers["X-Folder-Scope"] = this.folderScope;
@@ -53,6 +74,7 @@ export class McpTransport {
     args: Record<string, unknown>,
   ): Promise<T> {
     if (!this.connected) await this.connect();
+    this.resetIdleTimer();
 
     const r = (await this.client.callTool({
       name,
@@ -87,6 +109,7 @@ export class McpTransport {
   }
 
   async close(): Promise<void> {
+    this.clearIdleTimer();
     if (this.connected) {
       await this.client.close().catch(() => {});
       this.transport = null;
