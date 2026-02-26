@@ -19,43 +19,6 @@ export interface GetDocumentMetadataResponse {
   folderId?: string | null;
 }
 
-export interface GetTreeOptions {
-  summary?: boolean;
-}
-
-export interface TreeNodeContent {
-  title: string;
-  node_id: string;
-  page_index: number;
-  text?: string;
-  nodes?: TreeNodeContent[];
-}
-
-export interface GetTreeResponse {
-  doc_id: string;
-  status: string;
-  retrieval_ready: boolean;
-  result: TreeNodeContent[];
-}
-
-export interface GetOcrOptions {
-  format?: "page" | "node" | "raw";
-}
-
-export interface OcrPageContent {
-  images: string[];
-  markdown: string;
-  page_index: number;
-  extended_node_candidates?: unknown[];
-}
-
-export interface GetOcrResponse {
-  doc_id: string;
-  status: string;
-  retrieval_ready: boolean;
-  result: OcrPageContent[];
-}
-
 export interface ListDocumentsOptions {
   limit?: number;
   offset?: number;

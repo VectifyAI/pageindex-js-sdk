@@ -4,10 +4,6 @@ import type {
   ChatCompletionsResponse,
   DeleteDocumentResponse,
   GetDocumentMetadataResponse,
-  GetOcrOptions,
-  GetOcrResponse,
-  GetTreeOptions,
-  GetTreeResponse,
   ListDocumentsOptions,
   ListDocumentsResponse,
   SubmitDocumentOptions,
@@ -55,32 +51,6 @@ export class PageIndexApi {
   async getDocument(docId: string): Promise<GetDocumentMetadataResponse> {
     return this.request<GetDocumentMetadataResponse>(
       `/doc/${encodeURIComponent(docId)}/metadata`,
-    );
-  }
-
-  async getTree(
-    docId: string,
-    options?: GetTreeOptions,
-  ): Promise<GetTreeResponse> {
-    const params = new URLSearchParams({ type: "tree" });
-    if (options?.summary !== undefined) {
-      params.set("summary", String(options.summary));
-    }
-    return this.request<GetTreeResponse>(
-      `/doc/${encodeURIComponent(docId)}/?${params}`,
-    );
-  }
-
-  async getOcr(
-    docId: string,
-    options?: GetOcrOptions,
-  ): Promise<GetOcrResponse> {
-    const params = new URLSearchParams({ type: "ocr" });
-    if (options?.format) {
-      params.set("format", options.format);
-    }
-    return this.request<GetOcrResponse>(
-      `/doc/${encodeURIComponent(docId)}/?${params}`,
     );
   }
 

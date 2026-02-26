@@ -110,8 +110,6 @@ const { doc_id } = await client.api.submitDocument(file, 'report.pdf');
 
 // Query document data
 const metadata = await client.api.getDocument(docId);
-const tree = await client.api.getTree(docId, { summary: true });
-const ocr = await client.api.getOcr(docId, { format: 'page' });
 
 // List and delete
 const docs = await client.api.listDocuments({ limit: 20, offset: 0 });
@@ -143,7 +141,7 @@ const chat = await client.api.chatCompletions({
 | Package name | `@pageindex/mcp-sdk` | `@pageindex/sdk` |
 | Auth config | `mcpToken` (required), `apiUrl` (required) | `apiKey` (required), `apiUrl` (optional, defaults to `api.pageindex.ai`) |
 | MCP tools | `processDocument`, `uploadDocument`, + query tools | Query tools only (`recentDocuments`, `getDocument`, etc.) |
-| REST API | — | `client.api` with `submitDocument`, `getTree`, `getOcr`, `chatCompletions`, etc. |
+| REST API | — | `client.api` with `submitDocument`, `getDocument`, `listDocuments`, `deleteDocument`, `chatCompletions` |
 | MCP connection | Manual `connect()` / `close()` | Auto-connect + idle auto-close (60s default) |
 | `await using` | Not supported | Supported |
 | Error codes | 4 codes | 7 codes + `statusCode` field |

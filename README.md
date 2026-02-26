@@ -82,12 +82,6 @@ const result = await client.api.submitDocument(file, 'document.pdf');
 // Get document metadata
 const doc = await client.api.getDocument(docId);
 
-// Get document tree structure
-const tree = await client.api.getTree(docId, { summary: true });
-
-// Get OCR content
-const ocr = await client.api.getOcr(docId, { format: 'page' });
-
 // List all documents
 const docs = await client.api.listDocuments({ limit: 20, offset: 0 });
 
