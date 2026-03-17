@@ -49,10 +49,11 @@ const recent = await client.tools.recentDocuments();
 ```typescript
 const client = new PageIndexClient({
   apiKey: 'your-api-key',
-  apiUrl: 'https://api.pageindex.ai', // optional, this is the default
-  folderScope: 'folder-id', // optional
+  folderScope: 'folder-id', // optional, restricts all operations to this folder
 });
 ```
+
+When `folderScope` is set, all operations are restricted to the specified folder and its descendants. Per-call `folderId` can narrow within the scope (e.g. target a subfolder) but cannot access folders outside the boundary. Change it at runtime via `client.setFolderScope(id)`.
 
 ### Tools
 
