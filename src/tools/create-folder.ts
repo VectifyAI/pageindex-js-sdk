@@ -13,6 +13,7 @@ export interface FolderItem {
   description: string | null;
   parent_folder_id: string | null;
   created_at: string;
+  updated_at: string;
   file_count: number;
   children_count: number;
 }

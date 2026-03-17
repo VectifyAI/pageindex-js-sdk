@@ -10,6 +10,11 @@ import {
   findRelevantDocuments,
 } from "./find-relevant-documents.js";
 import {
+  type GetDocumentImageParams,
+  type GetDocumentImageResult,
+  getDocumentImage,
+} from "./get-document-image.js";
+import {
   type GetDocumentStructureParams,
   type GetDocumentStructureResult,
   getDocumentStructure,
@@ -30,6 +35,7 @@ import {
   listFolders,
 } from "./list-folders.js";
 import {
+  type RecentDocumentsParams,
   type RecentDocumentsResult,
   recentDocuments,
 } from "./recent-documents.js";
@@ -48,6 +54,7 @@ export type {
 export type { ListFoldersParams, ListFoldersResult } from "./list-folders.js";
 export type {
   RecentDocumentItem,
+  RecentDocumentsParams,
   RecentDocumentsResult,
 } from "./recent-documents.js";
 export type {
@@ -56,6 +63,10 @@ export type {
   SearchDocumentItem,
 } from "./find-relevant-documents.js";
 export type { GetDocumentParams, GetDocumentResult } from "./get-document.js";
+export type {
+  GetDocumentImageParams,
+  GetDocumentImageResult,
+} from "./get-document-image.js";
 export type {
   GetDocumentStructureParams,
   GetDocumentStructureResult,
@@ -73,8 +84,9 @@ export type {
 export class PageIndexTools {
   constructor(private transport: McpTransport) {}
 
-  recentDocuments = (): Promise<RecentDocumentsResult> =>
-    recentDocuments(this.transport);
+  recentDocuments = (
+    params?: RecentDocumentsParams,
+  ): Promise<RecentDocumentsResult> => recentDocuments(this.transport, params);
 
   findRelevantDocuments = (
     params?: FindRelevantDocumentsParams,
@@ -89,6 +101,11 @@ export class PageIndexTools {
 
   getDocument = (params: GetDocumentParams): Promise<GetDocumentResult> =>
     getDocument(this.transport, params);
+
+  getDocumentImage = (
+    params: GetDocumentImageParams,
+  ): Promise<GetDocumentImageResult> =>
+    getDocumentImage(this.transport, params);
 
   getDocumentStructure = (
     params: GetDocumentStructureParams,

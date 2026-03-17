@@ -4,6 +4,7 @@ import type { NextSteps } from "./types.js";
 export interface GetDocumentParams {
   docName: string;
   waitForCompletion?: boolean;
+  folderId?: string | null;
 }
 
 export interface GetDocumentResult {
@@ -28,5 +29,6 @@ export async function getDocument(
   return transport.callTool<GetDocumentResult>("get_document", {
     doc_name: params.docName,
     wait_for_completion: params.waitForCompletion,
+    folder_id: params.folderId,
   });
 }

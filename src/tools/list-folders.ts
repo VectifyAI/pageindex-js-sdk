@@ -11,6 +11,11 @@ export interface ListFoldersParams {
 
 export interface ListFoldersResult {
   folders: FolderItem[];
+  total: number;
+  filter: {
+    parent_folder_id?: string;
+    scope: string;
+  };
   next_steps: NextSteps;
 }
 

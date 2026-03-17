@@ -1,6 +1,9 @@
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/streamableHttp.js";
-import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
+import type {
+  CallToolResult,
+  ImageContent,
+} from "@modelcontextprotocol/sdk/types.js";
 import pkg from "../package.json" assert { type: "json" };
 import { PageIndexError, type PageIndexErrorCode } from "./errors.js";
 
@@ -106,6 +109,51 @@ export class McpTransport {
     }
 
     return data as T;
+  }
+
+  async callToolForImage(
+    name: string,
+    args: Record<string, unknown>,
+  ): Promise<ImageContent> {
+    if (!this.connected) await this.connect();
+    this.resetIdleTimer();
+
+    const r = (await this.client.callTool({
+      name,
+      arguments: args,
+    })) as CallToolResult;
+
+    if (r.isError) {
+      const textContent = r.content.find((c) => c.type === "text");
+      const text = textContent?.type === "text" ? textContent.text : undefined;
+      if (text) {
+        let data: Record<string, unknown>;
+        try {
+          data = JSON.parse(text) as Record<string, unknown>;
+        } catch {
+          throw new PageIndexError(text, "INTERNAL_ERROR");
+        }
+        const { error, errorCode, ...details } = data as {
+          error: string;
+          errorCode?: PageIndexErrorCode;
+          [key: string]: unknown;
+        };
+        throw new PageIndexError(error, errorCode, details);
+      }
+      throw new PageIndexError("Image retrieval failed", "INTERNAL_ERROR");
+    }
+
+    const imageContent = r.content.find(
+      (c): c is ImageContent => c.type === "image",
+    );
+    if (!imageContent) {
+      throw new PageIndexError(
+        "No image content in response",
+        "INTERNAL_ERROR",
+      );
+    }
+
+    return imageContent;
   }
 
   async close(): Promise<void> {
