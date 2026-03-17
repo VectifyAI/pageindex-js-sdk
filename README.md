@@ -58,16 +58,17 @@ const client = new PageIndexClient({
 
 All methods via `client.tools`:
 
-| Method                                                         | Description                         |
-| -------------------------------------------------------------- | ----------------------------------- |
-| `recentDocuments()`                                            | List recent uploads                 |
-| `findRelevantDocuments({ nameOrDescriptionFilter?, limit? })`  | Search documents                    |
-| `getDocument({ docName, waitForCompletion? })`                 | Get document details                |
-| `getDocumentStructure({ docName, part?, waitForCompletion? })` | Extract document outline            |
-| `getPageContent({ docName, pages, waitForCompletion? })`       | Extract page content                |
-| `removeDocument({ docNames })`                                 | Delete documents                    |
-| `createFolder({ name, description?, parentFolderId? })`        | Create folder                       |
-| `listFolders({ parentFolderId? })`                             | List folders                        |
+| Method                                                                    | Description              |
+| ------------------------------------------------------------------------- | ------------------------ |
+| `recentDocuments({ folderId?, cursor?, limit? })`                         | List recent uploads      |
+| `findRelevantDocuments({ query?, limit?, folderId?, cursor? })`           | Search documents         |
+| `getDocument({ docName, waitForCompletion?, folderId? })`                 | Get document details     |
+| `getDocumentStructure({ docName, part?, waitForCompletion?, folderId? })` | Extract document outline |
+| `getPageContent({ docName, pages, waitForCompletion?, folderId? })`       | Extract page content     |
+| `getDocumentImage({ imagePath })`                                         | Retrieve embedded image  |
+| `removeDocument({ docNames, folderId? })`                                 | Delete documents         |
+| `createFolder({ name, description?, parentFolderId? })`                   | Create folder            |
+| `listFolders({ parentFolderId? })`                                        | List folders             |
 
 Page specification formats: `"5"`, `"3,7,10"`, `"5-10"`, `"1-3,7,9-12"`
 

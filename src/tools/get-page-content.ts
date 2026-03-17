@@ -5,6 +5,7 @@ export interface GetPageContentParams {
   docName: string;
   pages: string;
   waitForCompletion?: boolean;
+  folderId?: string | null;
 }
 
 export interface PageContentItem {
@@ -32,5 +33,6 @@ export async function getPageContent(
     doc_name: params.docName,
     pages: params.pages,
     wait_for_completion: params.waitForCompletion,
+    folder_id: params.folderId,
   });
 }

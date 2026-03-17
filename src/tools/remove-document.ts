@@ -3,6 +3,7 @@ import type { NextSteps } from "./types.js";
 
 export interface RemoveDocumentParams {
   docNames: string[];
+  folderId?: string | null;
 }
 
 export interface RemoveDocumentResult {
@@ -24,5 +25,6 @@ export async function removeDocument(
 ): Promise<RemoveDocumentResult> {
   return transport.callTool<RemoveDocumentResult>("remove_document", {
     doc_names: params.docNames,
+    folder_id: params.folderId,
   });
 }

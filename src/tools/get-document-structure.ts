@@ -5,6 +5,7 @@ export interface GetDocumentStructureParams {
   docName: string;
   part?: number;
   waitForCompletion?: boolean;
+  folderId?: string | null;
 }
 
 export interface GetDocumentStructureResult {
@@ -24,6 +25,7 @@ export async function getDocumentStructure(
       doc_name: params.docName,
       part: params.part,
       wait_for_completion: params.waitForCompletion,
+      folder_id: params.folderId,
     },
   );
 }
