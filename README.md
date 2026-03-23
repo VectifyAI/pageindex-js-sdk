@@ -122,7 +122,9 @@ try {
 
 ## Examples
 
-See [examples/chat-demo](./examples/chat-demo) for Next.js + AI SDK integration.
+See [examples/chat-with-tools](./examples/chat-with-tools) for Next.js + AI SDK integration with MCP tools.
+
+See [examples/chat-completions](./examples/chat-completions) for direct usage of the Chat Completions API.
 
 ## License
 

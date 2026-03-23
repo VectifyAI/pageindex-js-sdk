@@ -1,6 +1,6 @@
 {
-  "buildCommand": "pnpm build && pnpm --filter chat-demo build",
-  "outputDirectory": "examples/chat-demo/.next",
+  "buildCommand": "pnpm build && pnpm --filter chat-with-tools build",
+  "outputDirectory": "examples/chat-with-tools/.next",
   "installCommand": "pnpm install",
   "framework": "nextjs"
 }
