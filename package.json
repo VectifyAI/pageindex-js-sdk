@@ -36,8 +36,11 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^1.9.4",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
     "@types/node": "^22.10.7",
     "next": "16.1.2",
+    "semantic-release": "^24.2.7",
     "tsdown": "0.20.0-beta.1",
     "typescript": "^5.7.3",
     "vitest": "^2.1.8"
@@ -64,5 +67,26 @@
   "license": "MIT",
   "engines": {
     "node": ">=18.0.0"
+  },
+  "release": {
+    "branches": ["main"],
+    "plugins": [
+      ["@semantic-release/commit-analyzer", {
+        "releaseRules": [
+          { "breaking": true, "release": "minor" },
+          { "type": "feat", "release": "minor" },
+          { "type": "fix", "release": "patch" },
+          { "type": "perf", "release": "patch" }
+        ]
+      }],
+      "@semantic-release/release-notes-generator",
+      "@semantic-release/changelog",
+      "@semantic-release/npm",
+      ["@semantic-release/git", {
+        "assets": ["package.json", "CHANGELOG.md"],
+        "message": "chore(release): ${nextRelease.version}"
+      }],
+      "@semantic-release/github"
+    ]
   }
 }
