@@ -1,9 +1,12 @@
 import { PageIndexError } from "../errors.js";
 import type {
+  ChatCompletionChunk,
   ChatCompletionsParams,
   ChatCompletionsResponse,
   DeleteDocumentResponse,
   GetDocumentMetadataResponse,
+  GetTreeOptions,
+  GetTreeResponse,
   ListDocumentsOptions,
   ListDocumentsResponse,
   SubmitDocumentOptions,
@@ -54,6 +57,19 @@ export class PageIndexApi {
     );
   }
 
+  async getTree(
+    docId: string,
+    options?: GetTreeOptions,
+  ): Promise<GetTreeResponse> {
+    const params = new URLSearchParams({ type: "tree" });
+    if (options?.nodeSummary) {
+      params.set("summary", "true");
+    }
+    return this.request<GetTreeResponse>(
+      `/doc/${encodeURIComponent(docId)}/?${params.toString()}`,
+    );
+  }
+
   async listDocuments(
     options?: ListDocumentsOptions,
   ): Promise<ListDocumentsResponse> {
@@ -80,8 +96,17 @@ export class PageIndexApi {
   }
 
   async chatCompletions(
+    params: ChatCompletionsParams & { stream: true },
+  ): Promise<AsyncIterable<ChatCompletionChunk>>;
+  async chatCompletions(
+    params: ChatCompletionsParams & { stream?: false },
+  ): Promise<ChatCompletionsResponse>;
+  async chatCompletions(
     params: ChatCompletionsParams,
-  ): Promise<ChatCompletionsResponse> {
+  ): Promise<ChatCompletionsResponse | AsyncIterable<ChatCompletionChunk>> {
+    if (params.stream) {
+      return this.requestStream("/chat/completions", params);
+    }
     return this.request<ChatCompletionsResponse>("/chat/completions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -112,6 +137,65 @@ export class PageIndexApi {
       body: formData,
     });
     return this.handleResponse<T>(response);
+  }
+
+  private async requestStream(
+    path: string,
+    params: ChatCompletionsParams,
+  ): Promise<AsyncIterable<ChatCompletionChunk>> {
+    const url = `${this.baseUrl}${path}`;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        api_key: this.apiKey,
+      },
+      body: JSON.stringify(params),
+    });
+
+    if (!response.ok) {
+      await this.handleResponse(response);
+    }
+
+    if (!response.body) {
+      throw new PageIndexError(
+        "Response body is empty",
+        "INTERNAL_ERROR",
+        undefined,
+        response.status,
+      );
+    }
+
+    return this.parseSSEStream(response.body);
+  }
+
+  private async *parseSSEStream(
+    body: ReadableStream<Uint8Array>,
+  ): AsyncIterable<ChatCompletionChunk> {
+    const reader = body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = "";
+
+    try {
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const lines = buffer.split("\n");
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed || !trimmed.startsWith("data: ")) continue;
+          const data = trimmed.slice(6);
+          if (data === "[DONE]") return;
+          yield JSON.parse(data) as ChatCompletionChunk;
+        }
+      }
+    } finally {
+      reader.releaseLock();
+    }
   }
 
   private async handleResponse<T>(response: Response): Promise<T> {

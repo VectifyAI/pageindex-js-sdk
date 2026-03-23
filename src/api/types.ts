@@ -46,13 +46,32 @@ export interface DeleteDocumentResponse {
   message: string;
 }
 
+export interface GetTreeOptions {
+  nodeSummary?: boolean;
+}
+
+export interface TreeNode {
+  title: string;
+  node_id: string;
+  page_index: number;
+  text: string;
+  summary?: string;
+  nodes?: TreeNode[];
+}
+
+export interface GetTreeResponse {
+  doc_id: string;
+  status: string;
+  retrieval_ready?: boolean;
+  result?: TreeNode[];
+}
+
 export interface ChatCompletionsParams {
   messages: Array<{
     role: "system" | "user" | "assistant";
     content: string;
   }>;
-  doc_id?: string;
-  doc_ids?: string[];
+  doc_id?: string | string[];
   model?: string;
   stream?: boolean;
   temperature?: number;
@@ -62,6 +81,8 @@ export interface ChatCompletionsParams {
 
 export interface ChatCompletionsResponse {
   id: string;
+  object?: string;
+  created?: number;
   choices: Array<{
     index: number;
     message: {
@@ -74,5 +95,21 @@ export interface ChatCompletionsResponse {
     prompt_tokens: number;
     completion_tokens: number;
     total_tokens: number;
+  };
+}
+
+export interface ChatCompletionChunk {
+  choices: Array<{
+    index: number;
+    delta: {
+      role?: string;
+      content?: string;
+    };
+    finish_reason?: string | null;
+  }>;
+  block_metadata?: {
+    type: string;
+    tool_name?: string;
+    [key: string]: unknown;
   };
 }
