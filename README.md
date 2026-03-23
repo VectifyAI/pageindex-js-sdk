@@ -1,130 +1,135 @@
 # @pageindex/sdk
 
-TypeScript SDK for [PageIndex](https://pageindex.ai) document processing.
+TypeScript SDK for [PageIndex](https://pageindex.ai) — upload documents, retrieve tree structures, and chat with your PDFs.
 
-Get your API Key at [dash.pageindex.ai](https://dash.pageindex.ai/api-keys). For full API documentation, see [docs.pageindex.ai](https://docs.pageindex.ai).
+Get your API Key at [dash.pageindex.ai](https://dash.pageindex.ai/api-keys). Full docs at [docs.pageindex.ai/js-sdk](https://docs.pageindex.ai/js-sdk).
 
 ## Installation
 
 ```bash
-pnpm add @pageindex/sdk
+npm install @pageindex/sdk
 ```
-
-Requires Node.js >= 18.0.0
 
 ## Quick Start
 
 ```typescript
 import { PageIndexClient } from '@pageindex/sdk';
+import { readFileSync } from 'fs';
 
-const client = new PageIndexClient({
-  apiKey: 'your-api-key',
-});
+const client = new PageIndexClient({ apiKey: 'YOUR_API_KEY' });
 
 // Upload a document
-const { doc_id } = await client.api.submitDocument(fileBuffer, 'report.pdf');
+const file = readFileSync('./report.pdf');
+const { doc_id } = await client.api.submitDocument(file, 'report.pdf');
 
-// List recent documents
-const recent = await client.tools.recentDocuments();
+// Get tree structure
+const tree = await client.api.getTree(doc_id);
 
-// Extract document structure
-const structure = await client.tools.getDocumentStructure({ docName: 'report.pdf' });
+// Chat with the document
+const response = await client.api.chatCompletions({
+  messages: [{ role: 'user', content: 'What are the key findings?' }],
+  doc_id,
+});
+console.log(response.choices[0].message.content);
 
-// Extract page content
-const pages = await client.tools.getPageContent({ docName: 'report.pdf', pages: '1-5' });
+// Stream a response
+const stream = await client.api.chatCompletions({
+  messages: [{ role: 'user', content: 'Summarize this document' }],
+  doc_id,
+  stream: true,
+});
+for await (const chunk of stream) {
+  process.stdout.write(chunk.choices[0]?.delta?.content ?? '');
+}
 ```
 
-With explicit resource management (TypeScript 5.2+):
-
-```typescript
-await using client = new PageIndexClient({ apiKey: 'your-api-key' });
-const recent = await client.tools.recentDocuments();
-// connection closed automatically when scope exits
-```
-
-## API
-
-### Client
+## Configuration
 
 ```typescript
 const client = new PageIndexClient({
-  apiKey: 'your-api-key',
-  folderScope: 'folder-id', // optional, restricts all operations to this folder
+  apiKey: 'YOUR_API_KEY', // Required
+  apiUrl: 'https://...', // Default: https://api.pageindex.ai
+  folderScope: 'folder-id', // Restrict all operations to a folder
 });
 ```
 
-When `folderScope` is set, all operations are restricted to the specified folder and its descendants. Per-call `folderId` can narrow within the scope (e.g. target a subfolder) but cannot access folders outside the boundary. Change it at runtime via `client.setFolderScope(id)`.
+## REST API (`client.api`)
 
-### Tools
+| Method                                     | Description                                     |
+| ------------------------------------------ | ----------------------------------------------- |
+| `submitDocument(file, fileName, options?)` | Upload a document                               |
+| `getTree(docId, options?)`                 | Get tree structure and processing status        |
+| `getDocument(docId)`                       | Get document metadata                           |
+| `listDocuments(options?)`                  | List documents (paginated)                      |
+| `deleteDocument(docId)`                    | Delete a document                               |
+| `chatCompletions(params)`                  | Chat with documents (streaming & non-streaming) |
 
-All methods via `client.tools`:
+## Chat API
 
-| Method                                                                    | Description              |
-| ------------------------------------------------------------------------- | ------------------------ |
-| `recentDocuments({ folderId?, cursor?, limit? })`                         | List recent uploads      |
-| `findRelevantDocuments({ query?, limit?, folderId?, cursor? })`           | Search documents         |
-| `getDocument({ docName, waitForCompletion?, folderId? })`                 | Get document details     |
-| `getDocumentStructure({ docName, part?, waitForCompletion?, folderId? })` | Extract document outline |
-| `getPageContent({ docName, pages, waitForCompletion?, folderId? })`       | Extract page content     |
-| `getDocumentImage({ imagePath })`                                         | Retrieve embedded image  |
-| `removeDocument({ docNames, folderId? })`                                 | Delete documents         |
-| `createFolder({ name, description?, parentFolderId? })`                   | Create folder            |
-| `listFolders({ parentFolderId? })`                                        | List folders             |
-
-Page specification formats: `"5"`, `"3,7,10"`, `"5-10"`, `"1-3,7,9-12"`
-
-### API
-
-All methods via `client.api`:
+Supports non-streaming, streaming, multi-document, metadata streaming, and citations. See [Chat API docs](https://docs.pageindex.ai/js-sdk/chat) for full reference.
 
 ```typescript
-// Submit a document
-const result = await client.api.submitDocument(file, 'document.pdf');
-
-// Get document metadata
-const doc = await client.api.getDocument(docId);
-
-// List all documents
-const docs = await client.api.listDocuments({ limit: 20, offset: 0 });
-
-// Delete a document
-await client.api.deleteDocument(docId);
-
-// Chat completions
-const chat = await client.api.chatCompletions({
-  messages: [{ role: 'user', content: 'Summarize the document' }],
-  doc_id: docId,
+// Multi-document chat
+await client.api.chatCompletions({
+  messages: [{ role: 'user', content: 'Compare these' }],
+  doc_id: ['doc-1', 'doc-2'],
 });
 
+// Streaming with tool call metadata
+const stream = await client.api.chatCompletions({
+  messages,
+  doc_id,
+  stream: true,
+  stream_metadata: true,
+});
+for await (const chunk of stream) {
+  if (chunk.block_metadata?.type === 'mcp_tool_use_start') {
+    console.log(`[Using: ${chunk.block_metadata.tool_name}]`);
+  }
+  process.stdout.write(chunk.choices[0]?.delta?.content ?? '');
+}
 ```
 
-### Error Handling
+## MCP Tools (`client.tools`)
+
+Typed wrappers for PageIndex MCP — for building custom AI agent integrations. See [MCP Tools docs](https://docs.pageindex.ai/js-sdk/mcp-tools).
+
+| Method                           | Description                  |
+| -------------------------------- | ---------------------------- |
+| `recentDocuments(params?)`       | List recent uploads          |
+| `findRelevantDocuments(params?)` | Search documents             |
+| `getDocument(params)`            | Get document details by name |
+| `getDocumentStructure(params)`   | Extract document outline     |
+| `getPageContent(params)`         | Read page content            |
+| `getDocumentImage(params)`       | Retrieve embedded image      |
+| `removeDocument(params)`         | Delete documents (batch)     |
+| `createFolder(params)`           | Create folder                |
+| `listFolders(params?)`           | List folders                 |
+
+## Error Handling
 
 ```typescript
 import { PageIndexError } from '@pageindex/sdk';
 
 try {
-  await client.tools.getDocument({ docName: 'xxx' });
-} catch (e) {
-  if (e instanceof PageIndexError) {
-    // e.code: 'NOT_FOUND' | 'UNAUTHORIZED' | 'RATE_LIMITED' | 'USAGE_LIMIT_REACHED' | ...
-    // e.statusCode: HTTP status code
+  await client.api.getDocument('invalid-id');
+} catch (error) {
+  if (error instanceof PageIndexError) {
+    console.log(error.code); // "NOT_FOUND" | "UNAUTHORIZED" | "RATE_LIMITED" | ...
+    console.log(error.message);
   }
 }
 ```
 
-## Documentation
-
-- [API Quickstart](https://docs.pageindex.ai/quickstart) — Get started with document processing
-- [API Endpoints](https://docs.pageindex.ai/endpoints) — Full REST API reference
-- [Python SDK](https://docs.pageindex.ai/sdk) — Python client (tree, chat, OCR)
-- [MCP Integration](https://docs.pageindex.ai/cookbook/mcp) — Use PageIndex with AI agents
-
 ## Examples
 
-See [examples/chat-with-tools](./examples/chat-with-tools) for Next.js + AI SDK integration with MCP tools.
+- [examples/chat-with-tools](./examples/chat-with-tools) — Next.js + AI SDK with MCP tools
+- [examples/chat-completions](./examples/chat-completions) — Direct Chat Completions API usage
 
-See [examples/chat-completions](./examples/chat-completions) for direct usage of the Chat Completions API.
+## Links
+
+- [JS SDK Docs](https://docs.pageindex.ai/js-sdk) · [Python SDK](https://docs.pageindex.ai/sdk) · [MCP](https://docs.pageindex.ai/cookbook/mcp) · [REST API](https://docs.pageindex.ai/endpoints)
+- [Discord](https://discord.gg/VuXuf29EUj) · [GitHub](https://github.com/VectifyAI/pageindex-js-sdk)
 
 ## License
 
