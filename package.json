@@ -1,6 +1,6 @@
 {
   "name": "@pageindex/sdk",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "PageIndex SDK - Document processing for AI applications via REST API and MCP",
   "type": "module",
   "main": "./dist/index.cjs",
