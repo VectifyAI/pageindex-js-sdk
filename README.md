@@ -62,6 +62,8 @@ const client = new PageIndexClient({
 | `getDocument(docId)`                       | Get document metadata                           |
 | `listDocuments(options?)`                  | List documents (paginated)                      |
 | `deleteDocument(docId)`                    | Delete a document                               |
+| `createFolder(options)`                    | Create a folder                                 |
+| `listFolders(options?)`                    | List folders                                    |
 | `chatCompletions(params)`                  | Chat with documents (streaming & non-streaming) |
 
 ## Chat API
@@ -103,7 +105,6 @@ Typed wrappers for PageIndex MCP — for building custom AI agent integrations. 
 | `getPageContent(params)`         | Read page content            |
 | `getDocumentImage(params)`       | Retrieve embedded image      |
 | `removeDocument(params)`         | Delete documents (batch)     |
-| `createFolder(params)`           | Create folder                |
 | `listFolders(params?)`           | List folders                 |
 
 ## Error Handling
@@ -115,7 +116,7 @@ try {
   await client.api.getDocument('invalid-id');
 } catch (error) {
   if (error instanceof PageIndexError) {
-    console.log(error.code); // "NOT_FOUND" | "UNAUTHORIZED" | "RATE_LIMITED" | ...
+    console.log(error.code); // "NOT_FOUND" | "UNAUTHORIZED" | "PLAN_REQUIRED" | ...
     console.log(error.message);
   }
 }

@@ -1,5 +1,3 @@
-// REST API response types — field names match actual API responses
-
 export interface SubmitDocumentOptions {
   mode?: string;
   folderId?: string;
@@ -96,6 +94,39 @@ export interface ChatCompletionsResponse {
     completion_tokens: number;
     total_tokens: number;
   };
+}
+
+export interface CreateFolderOptions {
+  name: string;
+  description?: string;
+  parentFolderId?: string;
+}
+
+export interface FolderItem {
+  id: string;
+  name: string;
+  description: string | null;
+  parent_folder_id: string | null;
+  created_at: string;
+  updated_at: string;
+  file_count: number;
+  children_count: number;
+}
+
+export interface CreateFolderResponse {
+  folder: FolderItem;
+}
+
+export interface ListFoldersOptions {
+  /**
+   * Use "root" for root-level folders only, a folder ID for subfolders, or omit for all folders.
+   */
+  parentFolderId?: string;
+}
+
+export interface ListFoldersResponse {
+  folders: FolderItem[];
+  total: number;
 }
 
 export interface ChatCompletionChunk {

@@ -3,12 +3,16 @@ import type {
   ChatCompletionChunk,
   ChatCompletionsParams,
   ChatCompletionsResponse,
+  CreateFolderOptions,
+  CreateFolderResponse,
   DeleteDocumentResponse,
   GetDocumentMetadataResponse,
   GetTreeOptions,
   GetTreeResponse,
   ListDocumentsOptions,
   ListDocumentsResponse,
+  ListFoldersOptions,
+  ListFoldersResponse,
   SubmitDocumentOptions,
   SubmitDocumentResponse,
 } from "./types.js";
@@ -93,6 +97,34 @@ export class PageIndexApi {
       `/doc/${encodeURIComponent(docId)}/`,
       { method: "DELETE" },
     );
+  }
+
+  async createFolder(
+    options: CreateFolderOptions,
+  ): Promise<CreateFolderResponse> {
+    const payload: Record<string, string> = { name: options.name };
+    if (options.description !== undefined) {
+      payload.description = options.description;
+    }
+    if (options.parentFolderId !== undefined) {
+      payload.parent_folder_id = options.parentFolderId;
+    }
+    return this.request<CreateFolderResponse>("/folder/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+  }
+
+  async listFolders(
+    options?: ListFoldersOptions,
+  ): Promise<ListFoldersResponse> {
+    const params = new URLSearchParams();
+    if (options?.parentFolderId !== undefined) {
+      params.set("parent_folder_id", options.parentFolderId);
+    }
+    const qs = params.toString();
+    return this.request<ListFoldersResponse>(`/folders/${qs ? `?${qs}` : ""}`);
   }
 
   async chatCompletions(
@@ -228,6 +260,8 @@ export class PageIndexApi {
     switch (status) {
       case 401:
         return "UNAUTHORIZED" as const;
+      case 403:
+        return "PLAN_REQUIRED" as const;
       case 404:
         return "NOT_FOUND" as const;
       case 429:

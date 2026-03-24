@@ -1,10 +1,5 @@
 import type { McpTransport } from "../transport.js";
 import {
-  type CreateFolderParams,
-  type CreateFolderResult,
-  createFolder,
-} from "./create-folder.js";
-import {
   type FindRelevantDocumentsParams,
   type FindRelevantDocumentsResult,
   findRelevantDocuments,
@@ -46,11 +41,6 @@ import {
 } from "./remove-document.js";
 
 export type { NextSteps } from "./types.js";
-export type {
-  CreateFolderParams,
-  CreateFolderResult,
-  FolderItem,
-} from "./create-folder.js";
 export type { ListFoldersParams, ListFoldersResult } from "./list-folders.js";
 export type {
   RecentDocumentItem,
@@ -92,9 +82,6 @@ export class PageIndexTools {
     params?: FindRelevantDocumentsParams,
   ): Promise<FindRelevantDocumentsResult> =>
     findRelevantDocuments(this.transport, params);
-
-  createFolder = (params: CreateFolderParams): Promise<CreateFolderResult> =>
-    createFolder(this.transport, params);
 
   listFolders = (params?: ListFoldersParams): Promise<ListFoldersResult> =>
     listFolders(this.transport, params);

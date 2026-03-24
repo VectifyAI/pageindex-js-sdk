@@ -1,5 +1,5 @@
 import type { McpTransport } from "../transport.js";
-import type { FolderItem } from "./create-folder.js";
+import type { FolderItem } from "../api/types.js";
 import type { NextSteps } from "./types.js";
 
 export interface ListFoldersParams {

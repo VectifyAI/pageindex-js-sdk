@@ -4,6 +4,8 @@ export type PageIndexErrorCode =
   | "NOT_FOUND"
   | "UNAUTHORIZED"
   | "RATE_LIMITED"
+  | "PLAN_REQUIRED"
+  | "FOLDER_SCOPE_VIOLATION"
   | "SERVICE_UNAVAILABLE"
   | "INTERNAL_ERROR";
 
