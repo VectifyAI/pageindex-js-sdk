@@ -1,8 +1,8 @@
-import { PageIndexClient, PageIndexError } from '@pageindex/sdk';
+import { PageIndexApi, PageIndexError } from '@pageindex/sdk';
 import { NextResponse } from 'next/server';
 import { getConfigFromRequest, validatePageIndexConfig } from '@/lib/config';
 
-function getClient(req: Request) {
+function getApi(req: Request) {
   const config = getConfigFromRequest(req);
   const { valid, missing } = validatePageIndexConfig(config);
 
@@ -10,9 +10,7 @@ function getClient(req: Request) {
     throw new Error(`Missing configuration: ${missing.join(', ')}`);
   }
 
-  // Note: folder list endpoint does NOT use folderScope
-  // because users need to see all folders to select one
-  return new PageIndexClient({
+  return new PageIndexApi({
     apiUrl: config.pageindexApiUrl,
     apiKey: config.pageindexApiKey,
   });
@@ -30,10 +28,9 @@ function handleError(error: unknown, defaultMessage: string) {
 
 export async function GET(req: Request) {
   try {
-    const client = getClient(req);
+    const api = getApi(req);
 
-    // Get root-level folders only
-    const result = await client.tools.listFolders({ parentFolderId: 'root' });
+    const result = await api.listFolders({ parentFolderId: 'root' });
 
     return NextResponse.json({
       folders: result.folders,
