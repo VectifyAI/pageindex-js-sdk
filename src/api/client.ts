@@ -45,9 +45,6 @@ export class PageIndexApi {
         ? file
         : new Blob([file], { type: "application/octet-stream" });
     formData.append("file", blob, fileName);
-    if (options?.mode) {
-      formData.append("mode", options.mode);
-    }
     const folderId = options?.folderId ?? this.folderScope;
     if (folderId) {
       formData.append("folder_id", folderId);
