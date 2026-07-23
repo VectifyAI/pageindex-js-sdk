@@ -2,7 +2,7 @@
 
 TypeScript SDK for [PageIndex](https://pageindex.ai) — upload documents, retrieve tree structures, and chat with your PDFs.
 
-Get your API Key at [dash.pageindex.ai](https://dash.pageindex.ai/api-keys). Full docs at [docs.pageindex.ai/js-sdk](https://docs.pageindex.ai/js-sdk).
+Get your API Key at [developer.pageindex.ai](https://developer.pageindex.ai/api-keys). Full docs at [docs.pageindex.ai/js-sdk](https://docs.pageindex.ai/js-sdk).
 
 ## Installation
 

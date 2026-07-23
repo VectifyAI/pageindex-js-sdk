@@ -8,7 +8,7 @@
 
 The SDK now connects to `api.pageindex.ai` by default for programmatic access. Do **not** use `chat.pageindex.ai/mcp` — that endpoint is for Chat platform users (e.g. Claude Desktop, Cursor).
 
-Get your API Key at [dash.pageindex.ai](https://dash.pageindex.ai/api-keys).
+Get your API Key at [developer.pageindex.ai](https://developer.pageindex.ai/api-keys).
 
 ## Step 1: Update dependency
 
