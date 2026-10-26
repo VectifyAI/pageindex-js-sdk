@@ -55,6 +55,7 @@ import {
   searchDocuments,
 } from "./search-documents.js";
 
+export type { DocumentAddress } from "./address.js";
 export type { NextSteps } from "./types.js";
 export type {
   BrowseDocumentItem,

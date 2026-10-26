@@ -2,8 +2,13 @@ import type { McpTransport } from "../transport.js";
 import type { NextSteps } from "./types.js";
 
 export interface GetFolderStructureParams {
-  folderId?: string;
+  /**
+   * Subtree root as a library path (e.g. `"Research/2024"`); omit for the
+   * entire library. Takes precedence over `folderId`.
+   */
   path?: string;
+  /** @deprecated Pass `path` instead. */
+  folderId?: string;
   depth?: number;
   includeCounts?: boolean;
 }

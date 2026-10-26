@@ -3,6 +3,12 @@ import type { NextSteps } from "./types.js";
 
 export interface SearchDocumentsParams {
   query: string;
+  /**
+   * Folder as a library path (e.g. `"Research/2024"`), copied from a folder's
+   * `path`; `""` is the library root. Takes precedence over `folderId`.
+   */
+  path?: string;
+  /** @deprecated Pass `path` instead. */
   folderId?: string;
   recursive?: boolean;
   limit?: number;
@@ -14,6 +20,10 @@ export interface SearchDocumentResultItem {
   status: string;
   created_at: string;
   folder_id?: string;
+  /**
+   * The document's own library path (folders included, e.g.
+   * `"Research/2024/Q3 Report.pdf"`); pass it back as `path` to address it.
+   */
   path?: string;
   /** LLM relevance score, 6-10. Higher is more relevant. */
   score: number;
@@ -30,6 +40,7 @@ export async function searchDocuments(
 ): Promise<SearchDocumentsResult> {
   return transport.callTool<SearchDocumentsResult>("search_documents", {
     query: params.query,
+    path: params.path,
     folder_id: params.folderId,
     recursive: params.recursive,
     limit: params.limit,
