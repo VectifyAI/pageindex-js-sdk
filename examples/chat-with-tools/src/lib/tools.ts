@@ -86,7 +86,7 @@ const TOOL_DESCRIPTIONS = {
   browse_documents:
     'Primary document discovery tool. Default sort="time" (newest first); use sort="relevance" + query for semantic ranking. Pass a folder path to drill into a sub-folder.',
   search_documents:
-    'ESCALATION tool — only use after browse_documents(sort="relevance") missed a document you strongly believe exists. Keyword-only query; results include an LLM relevance score (6-10).',
+    'ESCALATION tool — only use after browse_documents(sort="relevance") missed a document you strongly believe exists. Keyword-only query; results carry no relevance score.',
   get_document:
     'Get a document\'s processing status and metadata. Call before get_document_structure() or get_page_content() to confirm the document is ready.',
   get_document_structure:

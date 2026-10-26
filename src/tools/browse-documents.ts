@@ -1,5 +1,5 @@
 import type { McpTransport } from "../transport.js";
-import type { NextSteps } from "./types.js";
+import type { DocumentMetadata, NextSteps } from "./types.js";
 
 export type BrowseSortMode = "time" | "relevance";
 
@@ -40,6 +40,7 @@ export interface BrowseDocumentItem {
    * `"Research/2024/Q3 Report.pdf"`); pass it back as `path` to address it.
    */
   path?: string;
+  metadata?: DocumentMetadata;
 }
 
 export interface BrowseDocumentsResult {

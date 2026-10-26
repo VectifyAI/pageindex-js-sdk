@@ -23,6 +23,11 @@ export interface GetPageContentResult {
   requested_pages: string;
   returned_pages: string;
   content: PageContentItem[];
+  /**
+   * Each returned page's full rendered image; pass an `image_path` to
+   * `getDocumentImage()` when the extracted text looks incomplete.
+   */
+  page_images?: { page: number; image_path: string }[];
   next_steps: NextSteps;
 }
 

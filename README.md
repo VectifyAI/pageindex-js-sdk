@@ -100,7 +100,7 @@ Typed wrappers for PageIndex MCP — for building custom AI agent integrations. 
 | -------------------------------- | ----------------------------------------------------------------- |
 | `browseDocuments(params?)`       | Unified discovery (time/relevance sort, folder drill-down)        |
 | `getFolderStructure(params?)`    | Folder hierarchy as a tree                                        |
-| `searchDocuments(params)`        | Keyword search with LLM re-rank (escalation path)                 |
+| `searchDocuments(params)`        | Keyword search (precision matching, escalation path)              |
 | `getDocument(params)`            | Get document details by library path                              |
 | `getDocumentStructure(params)`   | Extract document outline                                          |
 | `getPageContent(params)`         | Read page content                                                 |
@@ -117,7 +117,7 @@ if (doc?.path) {
 }
 ```
 
-The `docName` / `docNames` / `folderId` parameters are deprecated in favor of `path` / `paths`, and will stop working once the server retires them.
+The `docName` / `docNames` / `folderId` parameters are deprecated in favor of `path` / `paths`; the server still accepts them.
 
 **Deprecated** (still callable for backward compatibility, hidden from the live MCP `tools/list`):
 

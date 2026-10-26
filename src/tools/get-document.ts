@@ -1,24 +1,30 @@
 import type { McpTransport } from "../transport.js";
 import { type DocumentAddress, documentAddressArgs } from "./address.js";
-import type { NextSteps } from "./types.js";
+import type { DocumentMetadata, NextSteps } from "./types.js";
 
 export type GetDocumentParams = DocumentAddress & {
   waitForCompletion?: boolean;
 };
 
 export interface GetDocumentResult {
-  id: string;
   name: string;
   description: string;
   status: string;
+  created_at: string;
+  page_count?: number;
+  /** The containing folder's id; `null` at the library root. */
+  folder_id: string | null;
   /** The document's library path; absent for documents that have none. */
   path?: string;
-  createdAt: string;
-  pageNum?: number;
+  /** Set for documents shared with the caller, which tools cannot modify. */
+  read_only?: true;
+  metadata?: DocumentMetadata;
+  /** Present when `waitForCompletion` made the call wait. */
   wait_info?: {
     waited: boolean;
-    elapsed_seconds?: number;
-    final_status?: string;
+    timed_out?: boolean;
+    wait_time_ms?: number;
+    poll_count?: number;
   };
   next_steps: NextSteps;
 }

@@ -1,5 +1,5 @@
 import type { McpTransport } from "../transport.js";
-import type { NextSteps } from "./types.js";
+import type { DocumentMetadata, NextSteps } from "./types.js";
 
 export interface SearchDocumentsParams {
   query: string;
@@ -25,8 +25,7 @@ export interface SearchDocumentResultItem {
    * `"Research/2024/Q3 Report.pdf"`); pass it back as `path` to address it.
    */
   path?: string;
-  /** LLM relevance score, 6-10. Higher is more relevant. */
-  score: number;
+  metadata?: DocumentMetadata;
 }
 
 export interface SearchDocumentsResult {
