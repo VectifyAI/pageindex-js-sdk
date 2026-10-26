@@ -100,12 +100,24 @@ Typed wrappers for PageIndex MCP — for building custom AI agent integrations. 
 | -------------------------------- | ----------------------------------------------------------------- |
 | `browseDocuments(params?)`       | Unified discovery (time/relevance sort, folder drill-down)        |
 | `getFolderStructure(params?)`    | Folder hierarchy as a tree                                        |
-| `searchDocuments(params)`        | Keyword search with LLM re-rank (escalation path)                 |
-| `getDocument(params)`            | Get document details by name                                      |
+| `searchDocuments(params)`        | Keyword search (precision matching, escalation path)              |
+| `getDocument(params)`            | Get document details by library path                              |
 | `getDocumentStructure(params)`   | Extract document outline                                          |
 | `getPageContent(params)`         | Read page content                                                 |
 | `getDocumentImage(params)`       | Retrieve embedded image                                           |
 | `removeDocument(params)`         | Delete documents (batch)                                          |
+
+Documents and folders are addressed by their **library path**: `"Research/2024/Q3 Report.pdf"` for a document (a root document is just its file name), `"Research/2024"` for a folder, `""` for the library root. Copy `path` verbatim from a `browseDocuments()`, `searchDocuments()` or `getDocument()` result:
+
+```typescript
+const { documents } = await client.tools.browseDocuments({ path: "Research" });
+const doc = documents[0];
+if (doc?.path) {
+  const pages = await client.tools.getPageContent({ path: doc.path, pages: "1-3" });
+}
+```
+
+The `docName` / `docNames` / `folderId` parameters are deprecated in favor of `path` / `paths`; the server still accepts them.
 
 **Deprecated** (still callable for backward compatibility, hidden from the live MCP `tools/list`):
 

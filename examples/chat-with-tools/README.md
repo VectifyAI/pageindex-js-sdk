@@ -45,9 +45,9 @@ import { PageIndexClient } from "@pageindex/sdk";
 export function buildPageIndexTools(client: PageIndexClient) {
   return {
     pageindex_get_document: tool({
-      description: "Get document details by name",
+      description: "Get document details by library path",
       inputSchema: z.object({
-        docName: z.string().describe("Document name"),
+        path: z.string().describe("The document's library path"),
       }),
       execute: async (params) => client.tools.getDocument(params),
     }),

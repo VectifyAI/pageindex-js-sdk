@@ -1,9 +1,15 @@
 import type { McpTransport } from "../transport.js";
-import type { NextSteps } from "./types.js";
+import type { DocumentMetadata, NextSteps } from "./types.js";
 
 export type BrowseSortMode = "time" | "relevance";
 
 export interface BrowseDocumentsParams {
+  /**
+   * Folder as a library path (e.g. `"Research/2024"`), copied from a folder's
+   * `path`; `""` is the library root. Takes precedence over `folderId`.
+   */
+  path?: string;
+  /** @deprecated Pass `path` instead. */
   folderId?: string;
   recursive?: boolean;
   sort?: BrowseSortMode;
@@ -15,6 +21,7 @@ export interface BrowseDocumentsParams {
 export interface BrowseFolderItem {
   id: string;
   name: string;
+  /** The folder's library path; pass it back as `path` to scope into it. */
   path: string;
   description: string | null;
   children_count: number;
@@ -28,7 +35,12 @@ export interface BrowseDocumentItem {
   status: string;
   created_at: string;
   folder_id?: string;
+  /**
+   * The document's own library path (folders included, e.g.
+   * `"Research/2024/Q3 Report.pdf"`); pass it back as `path` to address it.
+   */
   path?: string;
+  metadata?: DocumentMetadata;
 }
 
 export interface BrowseDocumentsResult {
@@ -45,6 +57,7 @@ export async function browseDocuments(
   params?: BrowseDocumentsParams,
 ): Promise<BrowseDocumentsResult> {
   return transport.callTool<BrowseDocumentsResult>("browse_documents", {
+    path: params?.path,
     folder_id: params?.folderId,
     recursive: params?.recursive,
     sort: params?.sort,

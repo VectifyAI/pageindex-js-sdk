@@ -14,6 +14,8 @@ export interface RecentDocumentItem {
   status: string;
   createdAt: string;
   pageNum?: number;
+  /** The document's library path; absent for documents that have none. */
+  path?: string;
 }
 
 export interface RecentDocumentsResult {
