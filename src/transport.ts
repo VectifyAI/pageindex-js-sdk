@@ -61,6 +61,7 @@ export class McpTransport {
     url.searchParams.set("folder", "1");
     const headers: Record<string, string> = {
       Authorization: `Bearer ${this.config.apiKey}`,
+      "User-Agent": `pageindex-js-sdk/${pkg.version}`,
     };
     if (this.folderScope) {
       headers["X-Folder-Scope"] = this.folderScope;
