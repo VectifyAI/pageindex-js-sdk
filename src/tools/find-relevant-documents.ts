@@ -18,6 +18,8 @@ export interface SearchDocumentItem {
   pageNum: number;
   createdAt: string;
   folderId: string | null;
+  /** The document's library path; absent for documents that have none. */
+  path?: string;
 }
 
 export interface FindRelevantDocumentsResult {

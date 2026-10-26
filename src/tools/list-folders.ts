@@ -9,8 +9,13 @@ export interface ListFoldersParams {
   parentFolderId?: string;
 }
 
+export interface ListFoldersFolder extends FolderItem {
+  /** The folder's library path; pass it back as `path` to scope into it. */
+  path: string;
+}
+
 export interface ListFoldersResult {
-  folders: FolderItem[];
+  folders: ListFoldersFolder[];
   total: number;
   filter: {
     parent_folder_id?: string;

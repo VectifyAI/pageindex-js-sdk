@@ -56,7 +56,7 @@ import {
 } from "./search-documents.js";
 
 export type { DocumentAddress } from "./address.js";
-export type { NextSteps } from "./types.js";
+export type { DocumentMetadata, NextSteps } from "./types.js";
 export type {
   BrowseDocumentItem,
   BrowseDocumentsParams,
@@ -89,7 +89,11 @@ export type {
   GetPageContentResult,
   PageContentItem,
 } from "./get-page-content.js";
-export type { ListFoldersParams, ListFoldersResult } from "./list-folders.js";
+export type {
+  ListFoldersFolder,
+  ListFoldersParams,
+  ListFoldersResult,
+} from "./list-folders.js";
 export type {
   RecentDocumentItem,
   RecentDocumentsParams,
