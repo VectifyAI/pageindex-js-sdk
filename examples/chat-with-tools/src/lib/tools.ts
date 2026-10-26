@@ -4,10 +4,10 @@ import { PageIndexClient } from '@pageindex/sdk';
 
 // Tool schemas - using camelCase to match SDK types
 const getFolderStructureSchema = z.object({
-  folderId: z
+  path: z
     .string()
     .optional()
-    .describe('Subtree root. Omit or use "root" for the entire library; pass a folder ID to scope to a subtree.'),
+    .describe('Subtree root as a folder path (e.g. "Research/2024"). Omit for the entire library.'),
   depth: z
     .number()
     .int()
@@ -19,10 +19,10 @@ const getFolderStructureSchema = z.object({
 });
 
 const browseDocumentsSchema = z.object({
-  folderId: z
+  path: z
     .string()
     .optional()
-    .describe('Folder scope. Omit or use "root" for the library root; pass a folder ID to drill into a sub-folder.'),
+    .describe('Folder scope as a path copied from a folder\'s `path` (e.g. "Research/2024"). Omit for the library root.'),
   recursive: z
     .boolean()
     .optional()
@@ -48,7 +48,7 @@ const searchDocumentsSchema = z.object({
     .describe(
       'Keyword query (NOT a natural-language sentence). Multiple keywords are AND-matched against file name and description.',
     ),
-  folderId: z.string().optional().describe('Folder scope. Omit or use "root" for the library root.'),
+  path: z.string().optional().describe('Folder scope as a folder path (e.g. "Research/2024"). Omit for the library root.'),
   recursive: z
     .boolean()
     .optional()
@@ -56,21 +56,24 @@ const searchDocumentsSchema = z.object({
   limit: z.number().min(1).max(50).default(10).optional().describe('Number of documents to return (1-50).'),
 });
 
+const documentPath = z
+  .string()
+  .min(1)
+  .describe(
+    'Document path copied verbatim from the `path` field of a browse_documents() or search_documents() response (e.g. "Research/2024/Q3 Report.pdf").',
+  );
+
 const getDocumentSchema = z.object({
-  docName: z.string().min(1).describe('Document name copied verbatim from a browse_documents() or search_documents() response.'),
-  folderId: z
-    .string()
-    .optional()
-    .describe('Disambiguator when two documents share the same name; copy `folder_id` from the same response.'),
+  path: documentPath,
 });
 
 const getDocumentStructureSchema = z.object({
-  docName: z.string().min(1).describe('Document name from browse_documents()/search_documents().'),
+  path: documentPath,
   part: z.number().int().min(1).default(1).optional().describe('Part number for pagination (1-based).'),
 });
 
 const getPageContentSchema = z.object({
-  docName: z.string().min(1).describe('Document name from browse_documents()/search_documents().'),
+  path: documentPath,
   pages: z
     .string()
     .min(1)
@@ -79,9 +82,9 @@ const getPageContentSchema = z.object({
 
 const TOOL_DESCRIPTIONS = {
   get_folder_structure:
-    'Orientation step: returns the folder hierarchy as a tree. Call this FIRST when exploring a library — folder names reveal content domains and return folder IDs you can pass to browse_documents().',
+    'Orientation step: returns the folder hierarchy as a tree. Call this FIRST when exploring a library — folder names reveal content domains and return folder paths you can pass to browse_documents().',
   browse_documents:
-    'Primary document discovery tool. Default sort="time" (newest first); use sort="relevance" + query for semantic ranking. Pass folder_id to drill into a sub-folder.',
+    'Primary document discovery tool. Default sort="time" (newest first); use sort="relevance" + query for semantic ranking. Pass a folder path to drill into a sub-folder.',
   search_documents:
     'ESCALATION tool — only use after browse_documents(sort="relevance") missed a document you strongly believe exists. Keyword-only query; results include an LLM relevance score (6-10).',
   get_document:
