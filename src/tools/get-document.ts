@@ -1,17 +1,18 @@
 import type { McpTransport } from "../transport.js";
+import { type DocumentAddress, documentAddressArgs } from "./address.js";
 import type { NextSteps } from "./types.js";
 
-export interface GetDocumentParams {
-  docName: string;
+export type GetDocumentParams = DocumentAddress & {
   waitForCompletion?: boolean;
-  folderId?: string | null;
-}
+};
 
 export interface GetDocumentResult {
   id: string;
   name: string;
   description: string;
   status: string;
+  /** The document's library path; absent for documents that have none. */
+  path?: string;
   createdAt: string;
   pageNum?: number;
   wait_info?: {
@@ -27,8 +28,7 @@ export async function getDocument(
   params: GetDocumentParams,
 ): Promise<GetDocumentResult> {
   return transport.callTool<GetDocumentResult>("get_document", {
-    doc_name: params.docName,
+    ...documentAddressArgs(params),
     wait_for_completion: params.waitForCompletion,
-    folder_id: params.folderId,
   });
 }
