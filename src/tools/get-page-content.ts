@@ -1,4 +1,4 @@
-import type { McpTransport } from "../transport.js";
+import type { McpTransport, PagePicture } from "../transport.js";
 import { type DocumentAddress, documentAddressArgs } from "./address.js";
 import type { NextSteps } from "./types.js";
 
@@ -28,6 +28,10 @@ export interface GetPageContentResult {
    * `getDocumentImage()` when the extracted text looks incomplete.
    */
   page_images?: { page: number; image_path: string }[];
+  /** Pages read as pictures (scans, charts), e.g. `"3,7"`. */
+  picture_pages?: string;
+  /** The rendered picture of each page listed in `picture_pages`. */
+  pictures: PagePicture[];
   next_steps: NextSteps;
 }
 
@@ -35,9 +39,12 @@ export async function getPageContent(
   transport: McpTransport,
   params: GetPageContentParams,
 ): Promise<GetPageContentResult> {
-  return transport.callTool<GetPageContentResult>("get_page_content", {
+  const { data, pictures } = await transport.callToolWithPictures<
+    Omit<GetPageContentResult, "pictures">
+  >("get_page_content", {
     ...documentAddressArgs(params),
     pages: params.pages,
     wait_for_completion: params.waitForCompletion,
   });
+  return { ...data, pictures };
 }
