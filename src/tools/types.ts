@@ -46,7 +46,7 @@ export interface DocumentListItem {
    * Collection documents have none.
    */
   path?: string;
-  /** The collection holding the document; such documents are read by `docName`. */
+  /** The collection holding the document; read it by `collection` + `docName`. */
   collection?: string;
   metadata?: DocumentMetadata;
 }

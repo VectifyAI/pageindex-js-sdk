@@ -136,7 +136,7 @@ if (doc?.path) {
 }
 ```
 
-The `docName` / `docNames` / `folderId` parameters are deprecated in favor of `path` / `paths`; the server still accepts them. Documents in a collection have no path, so `docName` stays their address.
+The `docName` / `docNames` / `folderId` parameters are deprecated in favor of `path` / `paths`; the server still accepts them. Documents in a collection have no path: address one by `collection` (its name from `listCollections()`) and `docName`, e.g. `getDocument({ collection: "Filings", docName: "10-K.pdf" })`.
 
 **Deprecated** (still callable for backward compatibility, hidden from the live MCP `tools/list`):
 
