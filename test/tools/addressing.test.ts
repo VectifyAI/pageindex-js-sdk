@@ -4,13 +4,18 @@ import type { McpTransport } from "../../src/transport.js";
 
 const callTool = vi.fn();
 const callToolForImage = vi.fn();
+const callToolWithPictures = vi.fn();
 const tools = new PageIndexTools({
   callTool,
   callToolForImage,
+  callToolWithPictures,
 } as unknown as McpTransport);
 
 beforeEach(() => {
   callTool.mockReset().mockResolvedValue({});
+  callToolWithPictures
+    .mockReset()
+    .mockResolvedValue({ data: {}, pictures: [] });
   callToolForImage
     .mockReset()
     .mockResolvedValue({ type: "image", data: "", mimeType: "image/png" });
@@ -52,7 +57,7 @@ describe("document tools", () => {
 
   it("address get_page_content by path", async () => {
     await tools.getPageContent({ path: "Research/Q3.pdf", pages: "1-3" });
-    expect(callTool).toHaveBeenCalledWith("get_page_content", {
+    expect(callToolWithPictures).toHaveBeenCalledWith("get_page_content", {
       path: "Research/Q3.pdf",
       pages: "1-3",
       wait_for_completion: undefined,
@@ -98,8 +103,11 @@ describe("folder-scoped tools", () => {
   });
 
   it("forward the library root path to search_documents", async () => {
-    await tools.searchDocuments({ query: "safety", path: "" });
-    expect(argsOf(callTool)).toMatchObject({ query: "safety", path: "" });
+    await tools.searchDocuments({ questions: ["safety?"], path: "" });
+    expect(argsOf(callTool)).toMatchObject({
+      questions: ["safety?"],
+      path: "",
+    });
   });
 
   it("forward a folder path to get_folder_structure", async () => {

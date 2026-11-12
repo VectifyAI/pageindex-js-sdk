@@ -1,7 +1,5 @@
 import type { McpTransport } from "../transport.js";
-import type { DocumentMetadata, NextSteps } from "./types.js";
-
-export type BrowseSortMode = "time" | "relevance";
+import type { DocumentListItem, NextSteps } from "./types.js";
 
 export interface BrowseDocumentsParams {
   /**
@@ -12,8 +10,6 @@ export interface BrowseDocumentsParams {
   /** @deprecated Pass `path` instead. */
   folderId?: string;
   recursive?: boolean;
-  sort?: BrowseSortMode;
-  query?: string;
   offset?: number;
   limit?: number;
 }
@@ -24,34 +20,27 @@ export interface BrowseFolderItem {
   /** The folder's library path; pass it back as `path` to scope into it. */
   path: string;
   description: string | null;
-  children_count: number;
-  file_count: number;
-  created_at: string;
+  children_count?: number;
+  file_count?: number;
+  created_at?: string;
 }
 
-export interface BrowseDocumentItem {
-  name: string;
-  description: string;
-  status: string;
-  created_at: string;
-  folder_id?: string;
-  /**
-   * The document's own library path (folders included, e.g.
-   * `"Research/2024/Q3 Report.pdf"`); pass it back as `path` to address it.
-   */
-  path?: string;
-  metadata?: DocumentMetadata;
-}
+export type BrowseDocumentItem = DocumentListItem;
 
 export interface BrowseDocumentsResult {
   folders?: BrowseFolderItem[];
+  /** Newest first. */
   documents: BrowseDocumentItem[];
-  sort: BrowseSortMode;
+  sort: "time";
   next_offset: number | null;
   has_more: boolean;
   next_steps: NextSteps;
 }
 
+/**
+ * A folder's sub-folders and documents, newest first. To find documents by
+ * what they say, use `searchDocuments({ questions })`.
+ */
 export async function browseDocuments(
   transport: McpTransport,
   params?: BrowseDocumentsParams,
@@ -60,8 +49,6 @@ export async function browseDocuments(
     path: params?.path,
     folder_id: params?.folderId,
     recursive: params?.recursive,
-    sort: params?.sort,
-    query: params?.query,
     offset: params?.offset,
     limit: params?.limit,
   });

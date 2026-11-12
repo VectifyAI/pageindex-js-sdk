@@ -12,10 +12,12 @@ export interface GetDocumentResult {
   status: string;
   created_at: string;
   page_count?: number;
-  /** The containing folder's id; `null` at the library root. */
+  /** The containing folder's id; `null` at the library root or in a collection. */
   folder_id: string | null;
   /** The document's library path; absent for documents that have none. */
   path?: string;
+  /** The collection holding the document; such documents have no `path`. */
+  collection?: string;
   /** Set for documents shared with the caller, which tools cannot modify. */
   read_only?: true;
   metadata?: DocumentMetadata;
