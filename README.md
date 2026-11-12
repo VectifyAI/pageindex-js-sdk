@@ -96,16 +96,35 @@ for await (const chunk of stream) {
 
 Typed wrappers for PageIndex MCP — for building custom AI agent integrations. See [MCP Tools docs](https://docs.pageindex.ai/js-sdk/mcp-tools).
 
-| Method                           | Description                                                       |
-| -------------------------------- | ----------------------------------------------------------------- |
-| `browseDocuments(params?)`       | Unified discovery (time/relevance sort, folder drill-down)        |
-| `getFolderStructure(params?)`    | Folder hierarchy as a tree                                        |
-| `searchDocuments(params)`        | Keyword search (precision matching, escalation path)              |
-| `getDocument(params)`            | Get document details by library path                              |
-| `getDocumentStructure(params)`   | Extract document outline                                          |
-| `getPageContent(params)`         | Read page content                                                 |
-| `getDocumentImage(params)`       | Retrieve embedded image                                           |
-| `removeDocument(params)`         | Delete documents (batch)                                          |
+| Method                         | Description                                                          |
+| ------------------------------ | -------------------------------------------------------------------- |
+| `browseDocuments(params?)`     | A folder's sub-folders and documents, newest first                   |
+| `listDocuments(params?)`       | Documents by metadata: filter, sort, aggregates, group by            |
+| `listCollections()`            | The account's collections                                            |
+| `getMetadataSchema(params?)`   | Metadata fields to filter on (folder, collection, or overview)       |
+| `getFolderStructure(params?)`  | Folder hierarchy as a tree                                           |
+| `searchDocuments(params)`      | Documents likely to answer `questions` (priced)                      |
+| `getDocument(params)`          | Get document details by library path                                 |
+| `getDocumentStructure(params)` | Extract document outline                                             |
+| `searchPages(params)`          | Pages of one document that answer `questions` (priced)               |
+| `getPageContent(params)`       | Read page content; picture pages come back in `pictures`             |
+| `viewPages(params)`            | Up to 5 pages as pictures, with their text                           |
+| `zoomPage(params)`             | A region of a page, rendered sharper                                 |
+| `getDocumentImage(params)`     | Retrieve embedded image                                              |
+| `removeDocument(params)`       | Delete documents (batch)                                             |
+
+List first, search second: `browseDocuments()`, `listDocuments()` and `listCollections()` are free; `searchDocuments({ questions })` and `searchPages()` are charged by what they read, so use them when a listing cannot pick the documents or pages out.
+
+```typescript
+const { results } = await client.tools.searchDocuments({
+  questions: ["What was Q3 revenue?"],
+  topK: 3,
+});
+const doc = results[0]?.documents[0];
+if (doc?.path) {
+  const pages = await client.tools.searchPages({ path: doc.path, questions: ["Q3 revenue table"] });
+}
+```
 
 Documents and folders are addressed by their **library path**: `"Research/2024/Q3 Report.pdf"` for a document (a root document is just its file name), `"Research/2024"` for a folder, `""` for the library root. Copy `path` verbatim from a `browseDocuments()`, `searchDocuments()` or `getDocument()` result:
 
@@ -117,15 +136,15 @@ if (doc?.path) {
 }
 ```
 
-The `docName` / `docNames` / `folderId` parameters are deprecated in favor of `path` / `paths`; the server still accepts them.
+The `docName` / `docNames` / `folderId` parameters are deprecated in favor of `path` / `paths`; the server still accepts them. Documents in a collection have no path, so `docName` stays their address.
 
 **Deprecated** (still callable for backward compatibility, hidden from the live MCP `tools/list`):
 
 | Method                           | Replacement                                          |
 | -------------------------------- | ---------------------------------------------------- |
-| `recentDocuments(params?)`       | `browseDocuments()` (default `sort: "time"`)         |
-| `findRelevantDocuments(params?)` | `browseDocuments({ sort: "relevance", query })` or `searchDocuments()` |
+| `recentDocuments(params?)`       | `browseDocuments()`                                  |
 | `listFolders(params?)`           | `getFolderStructure()`                               |
+| `searchDocuments({ query })`     | `searchDocuments({ questions })` (keyword form)      |
 
 ## Error Handling
 
