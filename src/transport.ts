@@ -77,70 +77,30 @@ export class McpTransport {
     name: string,
     args: Record<string, unknown>,
   ): Promise<T> {
-    if (!this.connected) await this.connect();
-    this.resetIdleTimer();
+    const r = await this.invoke(name, args);
+    return parseJsonResult<T>(r);
+  }
 
-    const r = (await this.client.callTool({
-      name,
-      arguments: args,
-    })) as CallToolResult;
-
-    const textContent = r.content.find((c) => c.type === "text");
-    const text = textContent?.type === "text" ? textContent.text : undefined;
-
-    if (!text) {
-      throw new PageIndexError("Empty response from server", "INTERNAL_ERROR");
-    }
-
-    let data: unknown;
-    try {
-      data = JSON.parse(text);
-    } catch {
-      // Response is not JSON - treat it as a plain text error
-      throw new PageIndexError(text, "INTERNAL_ERROR");
-    }
-
-    if (r.isError) {
-      const { error, errorCode, ...details } = data as {
-        error: string;
-        errorCode?: PageIndexErrorCode;
-        [key: string]: unknown;
-      };
-      throw new PageIndexError(error, errorCode, details);
-    }
-
-    return data as T;
+  /**
+   * For tools that answer with a JSON text block followed by labelled
+   * pictures (`"Page N of …:"` text, then an image block). Returns the JSON
+   * and every picture with the page its label names.
+   */
+  async callToolWithPictures<T = unknown>(
+    name: string,
+    args: Record<string, unknown>,
+  ): Promise<{ data: T; pictures: PagePicture[] }> {
+    const r = await this.invoke(name, args);
+    return { data: parseJsonResult<T>(r), pictures: collectPictures(r) };
   }
 
   async callToolForImage(
     name: string,
     args: Record<string, unknown>,
   ): Promise<ImageContent> {
-    if (!this.connected) await this.connect();
-    this.resetIdleTimer();
-
-    const r = (await this.client.callTool({
-      name,
-      arguments: args,
-    })) as CallToolResult;
-
+    const r = await this.invoke(name, args);
     if (r.isError) {
-      const textContent = r.content.find((c) => c.type === "text");
-      const text = textContent?.type === "text" ? textContent.text : undefined;
-      if (text) {
-        let data: Record<string, unknown>;
-        try {
-          data = JSON.parse(text) as Record<string, unknown>;
-        } catch {
-          throw new PageIndexError(text, "INTERNAL_ERROR");
-        }
-        const { error, errorCode, ...details } = data as {
-          error: string;
-          errorCode?: PageIndexErrorCode;
-          [key: string]: unknown;
-        };
-        throw new PageIndexError(error, errorCode, details);
-      }
+      parseJsonResult(r);
       throw new PageIndexError("Image retrieval failed", "INTERNAL_ERROR");
     }
 
@@ -157,6 +117,18 @@ export class McpTransport {
     return imageContent;
   }
 
+  private async invoke(
+    name: string,
+    args: Record<string, unknown>,
+  ): Promise<CallToolResult> {
+    if (!this.connected) await this.connect();
+    this.resetIdleTimer();
+    return (await this.client.callTool({
+      name,
+      arguments: args,
+    })) as CallToolResult;
+  }
+
   async close(): Promise<void> {
     this.clearIdleTimer();
     if (this.connected) {
@@ -165,4 +137,70 @@ export class McpTransport {
       this.connected = false;
     }
   }
+}
+
+/** A rendered page (or region of one) returned beside a tool's JSON. */
+export interface PagePicture {
+  /** The page the picture shows, read from the label the server puts before it. */
+  page: number;
+  /** Base64-encoded image bytes. */
+  data: string;
+  mimeType: string;
+}
+
+// The MCP server checks arguments against the advertised schema before the
+// tool runs and answers a mismatch in plain text with this prefix.
+const SCHEMA_REJECTION_PREFIX = "Input validation error:";
+
+/**
+ * Reads the first text block as the tool's JSON payload and throws a
+ * PageIndexError when the call failed.
+ */
+export function parseJsonResult<T>(r: CallToolResult): T {
+  const textContent = r.content.find((c) => c.type === "text");
+  const text = textContent?.type === "text" ? textContent.text : undefined;
+
+  if (!text) {
+    throw new PageIndexError("Empty response from server", "INTERNAL_ERROR");
+  }
+
+  let data: unknown;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new PageIndexError(
+      text,
+      text.startsWith(SCHEMA_REJECTION_PREFIX)
+        ? "INVALID_INPUT"
+        : "INTERNAL_ERROR",
+    );
+  }
+
+  if (r.isError) {
+    const { error, errorCode, ...details } = data as {
+      error: string;
+      errorCode?: PageIndexErrorCode;
+      [key: string]: unknown;
+    };
+    throw new PageIndexError(error, errorCode, details);
+  }
+
+  return data as T;
+}
+
+const PICTURE_LABEL = /^Page (\d+) of /;
+
+function collectPictures(r: CallToolResult): PagePicture[] {
+  const pictures: PagePicture[] = [];
+  let page: number | undefined;
+  for (const block of r.content) {
+    if (block.type === "text") {
+      const match = PICTURE_LABEL.exec(block.text);
+      page = match ? Number(match[1]) : undefined;
+    } else if (block.type === "image" && page !== undefined) {
+      pictures.push({ page, data: block.data, mimeType: block.mimeType });
+      page = undefined;
+    }
+  }
+  return pictures;
 }
