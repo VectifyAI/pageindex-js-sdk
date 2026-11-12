@@ -6,13 +6,22 @@ import type { NextSteps } from "./types.js";
  * `searchDocuments()` result. Max 10 per call.
  */
 export type RemoveDocumentParams =
-  | { paths: string[]; docNames?: never; folderId?: never }
+  | { paths: string[]; docNames?: never; folderId?: never; collection?: never }
   | {
-      /** @deprecated Pass `paths` instead. */
+      /** The collection's `name`; collection documents have no path. */
+      collection: string;
+      /** File names of documents in that collection. */
+      docNames: string[];
+      paths?: never;
+      folderId?: never;
+    }
+  | {
+      /** @deprecated Pass `paths`, or `collection` with `docNames`. */
       docNames: string[];
       /** @deprecated Pass `paths` instead. */
       folderId?: string | null;
       paths?: never;
+      collection?: never;
     };
 
 export interface RemoveDocumentResultItem {
@@ -36,6 +45,8 @@ export async function removeDocument(
     "remove_document",
     params.paths !== undefined
       ? { paths: params.paths }
-      : { doc_names: params.docNames, folder_id: params.folderId },
+      : params.collection !== undefined
+        ? { collection: params.collection, doc_names: params.docNames }
+        : { doc_names: params.docNames, folder_id: params.folderId },
   );
 }

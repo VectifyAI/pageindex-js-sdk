@@ -158,3 +158,30 @@ describe("page tools", () => {
     expect(result.pictures).toEqual([picture]);
   });
 });
+
+describe("collection documents", () => {
+  it("are addressed by collection and name", async () => {
+    await tools.getPageContent({
+      collection: "Filings",
+      docName: "10-K.pdf",
+      pages: "1",
+    });
+    expect(callToolWithPictures).toHaveBeenCalledWith("get_page_content", {
+      collection: "Filings",
+      doc_name: "10-K.pdf",
+      pages: "1",
+      wait_for_completion: undefined,
+    });
+  });
+
+  it("are removed by collection and names", async () => {
+    await tools.removeDocument({
+      collection: "Filings",
+      docNames: ["10-K.pdf"],
+    });
+    expect(callTool).toHaveBeenCalledWith("remove_document", {
+      collection: "Filings",
+      doc_names: ["10-K.pdf"],
+    });
+  });
+});

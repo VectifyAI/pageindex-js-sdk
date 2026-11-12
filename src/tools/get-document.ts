@@ -16,7 +16,7 @@ export interface GetDocumentResult {
   folder_id: string | null;
   /** The document's library path; absent for documents that have none. */
   path?: string;
-  /** The collection holding the document; such documents have no `path`. */
+  /** The collection holding the document; such documents have no `path` and are read by `collection` + `docName`. */
   collection?: string;
   /** Set for documents shared with the caller, which tools cannot modify. */
   read_only?: true;
