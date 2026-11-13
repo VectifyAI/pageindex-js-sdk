@@ -20,9 +20,13 @@ export interface FoundPage {
   page: number;
   /** How likely the page is to answer the question, 0–1. */
   relevance: number;
-  /** `"image"` pages carry no text: look at them with `viewPages()`. */
+  /**
+   * `"image"` pages are pictures (scans, charts): their `text` may be
+   * incomplete, so look at them with `viewPages()`.
+   */
   read: "text" | "image";
   text?: string;
+  /** Set on `"image"` pages: says their text may be incomplete. */
   note?: string;
 }
 

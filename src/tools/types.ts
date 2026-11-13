@@ -49,4 +49,6 @@ export interface DocumentListItem {
   /** The collection holding the document; read it by `collection` + `docName`. */
   collection?: string;
   metadata?: DocumentMetadata;
+  /** `false` when `searchPages()` cannot search the document: read it with `getDocumentStructure()` and `getPageContent()`. */
+  page_search?: boolean;
 }

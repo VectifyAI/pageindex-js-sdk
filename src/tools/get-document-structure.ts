@@ -11,7 +11,12 @@ export interface GetDocumentStructureResult {
   doc_name: string;
   /** The document's library path; absent for documents that have none. */
   path?: string;
-  structure: unknown;
+  /**
+   * The document's outline as text. With levels: one heading per line,
+   * tab-indented per level, with `(p.N)` page refs and an optional
+   * ` — summary`. Without levels: one line per page, `p.N Heading|Heading`.
+   */
+  structure: string;
   total_parts?: number;
   next_steps: NextSteps;
 }

@@ -42,6 +42,8 @@ export interface FoundDocument {
   metadata?: DocumentMetadata;
   /** How likely the document is to answer the question, 0–1. */
   relevance: number;
+  /** `false` when `searchPages()` cannot search the document: read it with `getDocumentStructure()` and `getPageContent()`. */
+  page_search?: boolean;
 }
 
 export interface SearchDocumentsResult {
