@@ -9,6 +9,12 @@ export interface BrowseDocumentsParams {
   path?: string;
   /** @deprecated Pass `path` instead. */
   folderId?: string;
+  /**
+   * List one collection's documents, by the collection's name, instead of a
+   * folder. A collection has no folders: exclusive with `path`, and
+   * `recursive` does not apply.
+   */
+  collection?: string;
   recursive?: boolean;
   offset?: number;
   limit?: number;
@@ -28,6 +34,9 @@ export interface BrowseFolderItem {
 export type BrowseDocumentItem = DocumentListItem;
 
 export interface BrowseDocumentsResult {
+  /** Set when a collection was listed: its name. */
+  collection?: string;
+  /** Absent when a collection was listed. */
   folders?: BrowseFolderItem[];
   /** Newest first. */
   documents: BrowseDocumentItem[];
@@ -38,8 +47,9 @@ export interface BrowseDocumentsResult {
 }
 
 /**
- * A folder's sub-folders and documents, newest first. To find documents by
- * what they say, use `searchDocuments({ questions })`.
+ * A folder's sub-folders and documents, newest first; with `collection`, that
+ * collection's documents. To find documents by what they say, use
+ * `searchDocuments({ questions })`.
  */
 export async function browseDocuments(
   transport: McpTransport,
@@ -48,6 +58,7 @@ export async function browseDocuments(
   return transport.callTool<BrowseDocumentsResult>("browse_documents", {
     path: params?.path,
     folder_id: params?.folderId,
+    collection: params?.collection,
     recursive: params?.recursive,
     offset: params?.offset,
     limit: params?.limit,

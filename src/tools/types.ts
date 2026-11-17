@@ -24,9 +24,12 @@ export type MetadataCondition =
   | { $lte: number | string };
 
 /**
- * A filter over the fields `getMetadataSchema()` declares, e.g.
+ * A filter over the declared metadata fields, e.g.
  * `{ year: { $gte: 2024 }, $or: [{ region: "EU" }, { region: "US" }] }`.
  * Nests up to 5 levels.
+ *
+ * @deprecated The server no longer lists the tools and parameters that take
+ * it; it still accepts them.
  */
 export type MetadataFilter = {
   $and?: MetadataFilter[];

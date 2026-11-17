@@ -8,7 +8,11 @@ export interface MetadataSchema {
   >;
 }
 
-/** Omit both for an overview of every schema; they are exclusive. */
+/**
+ * Omit both for an overview of every schema; they are exclusive.
+ *
+ * @deprecated See `getMetadataSchema()`.
+ */
 export interface GetMetadataSchemaParams {
   /** A folder's library path; `""` is the library root. */
   path?: string;
@@ -54,6 +58,11 @@ export type GetMetadataSchemaResult =
   | CollectionMetadataSchemaResult
   | MetadataSchemaOverviewResult;
 
+/**
+ * @deprecated The server no longer lists `get_metadata_schema`; it still
+ * answers a call. Documents keep their `metadata` in listings and search
+ * results.
+ */
 export function getMetadataSchema(
   transport: McpTransport,
   params?: GetMetadataSchemaParams,

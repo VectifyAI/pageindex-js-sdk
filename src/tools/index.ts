@@ -173,8 +173,8 @@ interface SearchDocumentsMethod {
 /**
  * Typed wrappers for the PageIndex MCP tools.
  *
- * Finding documents: list them for free by folder (`browseDocuments`), by
- * metadata (`listDocuments`) or by collection (`listCollections`); ask
+ * Finding documents: list them for free by folder or by collection
+ * (`browseDocuments`; `listCollections` names the collections); ask
  * `searchDocuments({ questions })`, which is priced, when a listing cannot
  * pick them out. Inside a document: `searchPages` (priced) finds the pages
  * that answer, `getPageContent` reads them, `viewPages` and `zoomPage` show
@@ -187,6 +187,10 @@ export class PageIndexTools {
     params?: BrowseDocumentsParams,
   ): Promise<BrowseDocumentsResult> => browseDocuments(this.transport, params);
 
+  /**
+   * @deprecated The server no longer lists `list_documents`; it still
+   * answers a call. Use `browseDocuments()`, which also lists a collection.
+   */
   listDocuments = (
     params?: ListDocumentsParams,
   ): Promise<ListDocumentsResult> => listDocuments(this.transport, params);
@@ -194,6 +198,10 @@ export class PageIndexTools {
   listCollections = (): Promise<ListCollectionsResult> =>
     listCollections(this.transport);
 
+  /**
+   * @deprecated The server no longer lists `get_metadata_schema`; it still
+   * answers a call.
+   */
   getMetadataSchema = (
     params?: GetMetadataSchemaParams,
   ): Promise<GetMetadataSchemaResult> =>

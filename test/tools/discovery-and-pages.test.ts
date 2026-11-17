@@ -91,6 +91,14 @@ describe("listing tools", () => {
     });
   });
 
+  it("browse_documents lists a collection by name", async () => {
+    await tools.browseDocuments({ collection: "Filings", limit: 20 });
+    expect(callTool).toHaveBeenCalledWith(
+      "browse_documents",
+      expect.objectContaining({ collection: "Filings", limit: 20 }),
+    );
+  });
+
   it("browse_documents no longer sends a sort or query", async () => {
     await tools.browseDocuments({ path: "Research" });
     const args = callTool.mock.calls[0]?.[1];

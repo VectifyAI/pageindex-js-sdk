@@ -10,7 +10,10 @@ export type MetadataAggregate =
   | { $max: FieldRef }
   | { $min: FieldRef };
 
-/** Lists documents by their metadata. Free; with no filter, every document. */
+/**
+ * @deprecated The server no longer lists `list_documents`; it still answers
+ * a call. Use `browseDocuments()`, which also lists a collection.
+ */
 export interface ListDocumentsParams {
   metadataFilter?: MetadataFilter;
   /** Up to 5 fields, `1` ascending or `-1` descending. */
@@ -43,6 +46,10 @@ export interface ListDocumentsResult {
   next_steps: NextSteps;
 }
 
+/**
+ * @deprecated The server no longer lists `list_documents`; it still answers
+ * a call. List a folder or a collection with `browseDocuments()`.
+ */
 export function listDocuments(
   transport: McpTransport,
   params?: ListDocumentsParams,

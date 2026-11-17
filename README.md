@@ -98,10 +98,8 @@ Typed wrappers for PageIndex MCP — for building custom AI agent integrations. 
 
 | Method                         | Description                                                          |
 | ------------------------------ | -------------------------------------------------------------------- |
-| `browseDocuments(params?)`     | A folder's sub-folders and documents, newest first                   |
-| `listDocuments(params?)`       | Documents by metadata: filter, sort, aggregates, group by            |
+| `browseDocuments(params?)`     | A folder's sub-folders and documents, or a collection's documents    |
 | `listCollections()`            | The account's collections                                            |
-| `getMetadataSchema(params?)`   | Metadata fields to filter on (folder, collection, or overview)       |
 | `getFolderStructure(params?)`  | Folder hierarchy as a tree                                           |
 | `searchDocuments(params)`      | Documents likely to answer `questions` (priced)                      |
 | `getDocument(params)`          | Get document details by library path                                 |
@@ -113,7 +111,11 @@ Typed wrappers for PageIndex MCP — for building custom AI agent integrations. 
 | `getDocumentImage(params)`     | Retrieve embedded image                                              |
 | `removeDocument(params)`       | Delete documents (batch)                                             |
 
-List first, search second: `browseDocuments()`, `listDocuments()` and `listCollections()` are free; `searchDocuments({ questions })` and `searchPages()` are charged by what they read, so use them when a listing cannot pick the documents or pages out.
+List first, search second: `browseDocuments()` and `listCollections()` are free; `searchDocuments({ questions })` and `searchPages()` are charged by what they read, so use them when a listing cannot pick the documents or pages out.
+
+A collection's documents have no `path`. List them with `browseDocuments({ collection })`, then read one by `collection` and its name as `docName`.
+
+`listDocuments()`, `getMetadataSchema()` and the `metadataFilter` parameter are deprecated: the server no longer lists them, and still answers a call.
 
 ```typescript
 const { results } = await client.tools.searchDocuments({
