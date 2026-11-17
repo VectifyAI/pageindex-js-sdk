@@ -1,3 +1,10 @@
+# [0.10.0](https://github.com/VectifyAI/pageindex-js-sdk/compare/v0.9.0...v0.10.0) (2026-11-17)
+
+
+### Features
+
+* **tools:** list a collection with browseDocuments and deprecate the metadata tools ([#4](https://github.com/VectifyAI/pageindex-js-sdk/issues/4)) ([8efff37](https://github.com/VectifyAI/pageindex-js-sdk/commit/8efff371bed2bcbedbec100d404a87b9f0c816a2))
+
 # [0.9.0](https://github.com/VectifyAI/pageindex-js-sdk/compare/v0.8.0...v0.9.0) (2026-11-14)
 
 
