@@ -20,15 +20,20 @@ interface SearchScope {
 
 /**
  * Finds the documents likely to answer each question. Priced by the
- * documents it looks at, so list with `browseDocuments()` / `listDocuments()`
- * first when a folder or metadata can pick the documents out.
+ * documents it looks at, so list with `browseDocuments()` first when a folder
+ * or a collection can pick the documents out.
  */
 export interface SearchDocumentsParams extends SearchScope {
   /** 1–10 questions, each up to 2,000 characters. */
   questions: string[];
   /** Documents per question (1–50). Without it, close calls come back as `more_documents`. */
   topK?: number;
-  /** Narrows the search to documents whose metadata matches. */
+  /**
+   * Narrows the search to documents whose metadata matches.
+   *
+   * @deprecated The server no longer lists this parameter; it still accepts
+   * it. Narrow the search with `path` or `collection`.
+   */
   metadataFilter?: MetadataFilter;
 }
 
@@ -65,6 +70,7 @@ export interface SearchDocumentsResult {
  */
 export interface KeywordSearchDocumentsParams extends SearchScope {
   query: string;
+  /** @deprecated The server no longer lists this parameter. */
   metadataFilter?: MetadataFilter;
   limit?: number;
   /** @deprecated Pass `path` instead. */
