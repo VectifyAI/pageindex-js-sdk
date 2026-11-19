@@ -14,5 +14,11 @@ export type {
   SearchAcrossDocumentsOptions,
   SearchOneDocumentOptions,
 } from "./page-search.js";
+export { PAGE_EXTRACT_COLLECTION, PageExtractClient } from "./page-extract.js";
+export type {
+  JsonSchema,
+  PageExtractOptions,
+  WaitExtractOptions,
+} from "./page-extract.js";
 export type { ProductClientConfig } from "./product-client.js";
 export type { FileInput } from "./internal.js";
