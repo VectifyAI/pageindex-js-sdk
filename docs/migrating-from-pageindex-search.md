@@ -77,7 +77,7 @@ The results have the same structure: one entry for each question, with the docum
 | `usage.balance_usd` | `usage.balance` |
 | `object` | (none) |
 
-`usage` reports credits, not US dollars.
+`usage` reports credits, not US dollars. One credit is one US cent: divide by 100 to get the old `_usd` values.
 
 ## Behavior changes
 
