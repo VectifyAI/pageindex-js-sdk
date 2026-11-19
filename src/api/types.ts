@@ -17,7 +17,8 @@ export interface SubmitDocumentOptions {
    * With a PDF and `index: false`: an extract job's configuration, as
    * `createExtract()` takes it. The job starts on the document, its id is the
    * answer's `extract_job_id`. Only the extraction is charged, once the job
-   * completes; a job that does not complete deletes the document. A file
+   * completes; a job that does not complete fails the document this upload
+   * made and deletes its file. A file
    * stored already that is still processing starts no job: the upload
    * rejects with status 409, and the error's `details.detail.doc_id` names
    * the stored document.

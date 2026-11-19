@@ -97,8 +97,9 @@ export class PageExtractClient {
    *   409. Or a file: it is uploaded to `collection` with the job, with no
    *   outline index built. Only the extraction is charged, once the job
    *   completes, and the file is kept as a document from then on; a job that
-   *   fails or is cancelled is not charged, and the file is not kept. Uploading
-   *   the same file again uses the stored document.
+   *   fails or is cancelled is not charged, and keeps of a file it uploaded
+   *   only a failed entry with its name. Uploading the same file again uses
+   *   the stored document.
    * @param schema A JSON Schema whose top is an object or an array. With Zod,
    *   pass `z.toJSONSchema(schema)`.
    * @returns The job. Once completed, `extract_result` holds the JSON.
@@ -150,10 +151,15 @@ export class PageExtractClient {
           docId = stored.doc_id;
           break;
         } catch (error) {
-          // The job it was stored with did not complete, and deleted it.
-          const deleted =
-            error instanceof PageIndexError && error.statusCode === 404;
-          if (!deleted || last) throw error;
+          // The job it was stored with did not complete, and failed it, or it
+          // was deleted: the file is uploaded again.
+          const again =
+            !last &&
+            error instanceof PageIndexError &&
+            (error.statusCode === 404 ||
+              (await api.getDocument(stored.doc_id, options.signal)).status ===
+                "failed");
+          if (!again) throw error;
         }
       }
     }
@@ -210,15 +216,18 @@ export class PageExtractClient {
   }
 
   /**
-   * Stops a pending or running extract job: nothing is charged, and a file
-   * uploaded with it is not kept. A job that has already ended rejects with
-   * HTTP 409.
+   * Stops a pending or running extract job: nothing is charged, and of a file
+   * uploaded with it only a failed entry with its name is kept. A job that has
+   * already ended rejects with HTTP 409.
    */
   cancelExtract(jobId: string): Promise<ExtractJob> {
     return this.pageindex.api.cancelExtract(jobId);
   }
 
-  /** Deletes an extract job and its result. The document it read stays. */
+  /**
+   * Deletes an extract job and its result. The document it read stays; one
+   * uploaded with a job deleted before it completes stays failed.
+   */
   deleteExtract(jobId: string): Promise<DeleteExtractResponse> {
     return this.pageindex.api.deleteExtract(jobId);
   }

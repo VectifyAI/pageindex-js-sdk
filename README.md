@@ -148,7 +148,7 @@ const completed = await extract.waitExtract(pending.id);
 
 A string is a `doc_id`. To upload a file, pass bytes, a `Blob`, or `{ path }`. With Zod, pass `z.toJSONSchema(schema)` as the schema.
 
-A file is uploaded with its job, and only the extraction is charged, once the job completes: the file is kept as a document from then on. A job that fails or is cancelled is not charged, and the file is not kept.
+A file is uploaded with its job, and only the extraction is charged, once the job completes: the file is kept as a document from then on. A job that fails or is cancelled is not charged, and keeps only a failed entry with the file's name.
 
 A job can take a minute or more. `extract()` waits up to `timeout`, which is one hour by default. If a job fails, is cancelled, or does not end within `timeout`, `extract()` rejects with a `PageIndexError` whose `details.job` holds the job. A job that does not end in time continues in the cloud: read it later with `getExtract(jobId)`.
 
