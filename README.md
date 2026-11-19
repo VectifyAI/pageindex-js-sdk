@@ -2,7 +2,7 @@
 
 TypeScript SDK for [PageIndex](https://pageindex.ai). Upload documents, retrieve tree structures, and chat with your PDFs. Find the pages that answer a question (Page Search), and extract JSON from a PDF (Page Extract).
 
-Get your API Key at [developer.pageindex.ai](https://developer.pageindex.ai/api-keys). Full docs at [docs.pageindex.ai/js-sdk](https://docs.pageindex.ai/js-sdk).
+Get your API Key at [developer.pageindex.ai](https://developer.pageindex.ai/api-keys). Full docs at [pageindex.ai/docs](https://pageindex.ai/docs).
 
 ## Installation
 
@@ -154,7 +154,7 @@ With `citeSources`, `extract_metadata.field_metadata` gives the page of each lis
 
 ## Chat API
 
-Supports non-streaming, streaming, multi-document, metadata streaming, and citations. See [Chat API docs](https://docs.pageindex.ai/js-sdk/chat) for full reference.
+Supports non-streaming, streaming, multi-document, metadata streaming, and citations. See [Use with your LLM](https://pageindex.ai/docs/sdk/chat) for full reference.
 
 ```typescript
 // Multi-document chat
@@ -180,7 +180,7 @@ for await (const chunk of stream) {
 
 ## MCP Tools (`client.tools`)
 
-Typed wrappers for PageIndex MCP — for building custom AI agent integrations. See [MCP Tools docs](https://docs.pageindex.ai/js-sdk/mcp-tools).
+Typed wrappers for PageIndex MCP — for building custom AI agent integrations. See [Use with your agent](https://pageindex.ai/docs/sdk/agents#give-your-agent-the-tools).
 
 | Method                         | Description                                                          |
 | ------------------------------ | -------------------------------------------------------------------- |
@@ -268,7 +268,7 @@ See [docs/migrating-from-pageindex-search.md](./docs/migrating-from-pageindex-se
 
 ## Links
 
-- [JS SDK Docs](https://docs.pageindex.ai/js-sdk) · [Python SDK](https://docs.pageindex.ai/sdk) · [MCP](https://docs.pageindex.ai/cookbook/mcp) · [REST API](https://docs.pageindex.ai/endpoints)
+- [Docs](https://pageindex.ai/docs) · [Page Search](https://pageindex.ai/docs/search/quick-start) · [Page Extract](https://pageindex.ai/docs/extract/quick-start) · [MCP](https://pageindex.ai/docs/api-reference/chat) · [REST API](https://pageindex.ai/docs/api-reference) · [Python SDK](https://github.com/VectifyAI/PageIndex)
 - [Discord](https://discord.gg/VuXuf29EUj) · [GitHub](https://github.com/VectifyAI/pageindex-js-sdk)
 
 ## License
