@@ -245,7 +245,7 @@ try {
   await client.api.getDocument('invalid-id');
 } catch (error) {
   if (error instanceof PageIndexError) {
-    console.log(error.code); // "NOT_FOUND" | "UNAUTHORIZED" | "PLAN_REQUIRED" | ...
+    console.log(error.code); // "NOT_FOUND" | "USAGE_LIMIT_REACHED" | "FORBIDDEN" | ...
     console.log(error.statusCode); // The HTTP status
     console.log(error.message);
   }
@@ -255,9 +255,22 @@ try {
 | Status | `code` | Cause |
 | --- | --- | --- |
 | 402 | `USAGE_LIMIT_REACHED` | The account has not enough credits |
+| 403 | `PLAN_REQUIRED` | A limit of the account's plan is reached |
+| 403 | `SUBSCRIPTION_REQUIRED` | The account needs a subscription |
+| 403 | `FORBIDDEN` | The API key is invalid, or the key may not do this |
+| 429 | `RATE_LIMITED` | Too many requests, after the SDK's retries |
 | 404 | `NOT_FOUND` | The document, collection or job does not exist |
 | 409 | `INTERNAL_ERROR` | The document is still processing, or the job has already ended. Read `statusCode`, not `code` |
 | (none) | `INVALID_INPUT` | The SDK refused the arguments before it sent a request |
+
+An MCP tool (`client.tools`) that fails for want of credits or for too many requests rejects with `USAGE_LIMIT_REACHED` and `statusCode` 402, or `RATE_LIMITED` and 429, as a REST call does. `details.open_url` links to the billing page.
+
+The SDK retries as the Python SDK does:
+
+- A REST request that gets 408, 409, 429 or 5xx is sent up to two more times. The SDK waits the server's `Retry-After` (up to 60 s), or 1 s and then 2 s.
+- A POST carries no idempotency key, so it is sent again only after a 429, or when it never reached the server. A search or an extract job is never started twice.
+- An MCP request that gets 429 or 5xx is sent up to three more times, after 0, 2 and 4 s.
+- A 402 is never retried: add credits, then call again. Across documents, a search that runs out of credits part-way rejects, and the searches it already ran are charged.
 
 ## Examples
 

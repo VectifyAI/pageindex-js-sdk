@@ -53,7 +53,35 @@ describe("parseJsonResult", () => {
       expect.objectContaining({
         code: "NOT_FOUND",
         details: { collection: "X" },
+        statusCode: undefined,
       }),
+    );
+  });
+
+  it("gives an account limit the HTTP status it stands for", () => {
+    const failed = (errorCode: string) => () =>
+      parseJsonResult({
+        isError: true,
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({
+              error: "Out of credits.",
+              errorCode,
+              open_url: "https://developer.pageindex.ai/billing",
+            }),
+          },
+        ],
+      });
+    expect(failed("USAGE_LIMIT_REACHED")).toThrow(
+      expect.objectContaining({
+        code: "USAGE_LIMIT_REACHED",
+        statusCode: 402,
+        details: { open_url: "https://developer.pageindex.ai/billing" },
+      }),
+    );
+    expect(failed("RATE_LIMITED")).toThrow(
+      expect.objectContaining({ code: "RATE_LIMITED", statusCode: 429 }),
     );
   });
 });
