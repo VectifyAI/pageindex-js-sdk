@@ -1,6 +1,6 @@
 # @pageindex/sdk
 
-TypeScript SDK for [PageIndex](https://pageindex.ai) — upload documents, retrieve tree structures, and chat with your PDFs.
+TypeScript SDK for [PageIndex](https://pageindex.ai). Upload documents, retrieve tree structures, and chat with your PDFs. Find the pages that answer a question (Page Search), and extract JSON from a PDF (Page Extract).
 
 Get your API Key at [developer.pageindex.ai](https://developer.pageindex.ai/api-keys). Full docs at [docs.pageindex.ai/js-sdk](https://docs.pageindex.ai/js-sdk).
 
@@ -113,7 +113,9 @@ for (const { question, documents } of many.results) {
 await search.searchDocuments('What was revenue in 2024?', { topK: 5 });
 ```
 
-Across documents, `search()` first finds the most relevant documents for each question. Then it searches the pages of those documents only. Every page searched is charged. Across documents, every document judged is charged too.
+Across documents, `search()` first finds the most relevant documents for each question. Then it searches the pages of those documents only. Every page searched is charged. Across documents, every document judged is charged too. `result.usage` gives the cost in credits and the balance that is left. One credit is one US cent.
+
+`PageSearchClient` addresses documents by their ID and calls the REST API. `client.tools.searchPages()` addresses a document by its library path and calls the MCP server, for AI agents.
 
 `upload()` takes bytes, a `Blob`, or `{ path }` in Node. To share a connection and a key with other code, pass `{ client: pageIndexClient }` in place of `apiKey`.
 
@@ -144,7 +146,11 @@ const pending = await extract.extract('doc-id', schema, { wait: false });
 const completed = await extract.waitExtract(pending.id);
 ```
 
-A string is a `doc_id`. To upload a file, pass bytes, a `Blob`, or `{ path }`. With Zod, pass `z.toJSONSchema(schema)` as the schema. If a job fails, is cancelled, or does not end within `timeout`, `extract()` rejects with a `PageIndexError` whose `details.job` holds the job.
+A string is a `doc_id`. To upload a file, pass bytes, a `Blob`, or `{ path }`. With Zod, pass `z.toJSONSchema(schema)` as the schema.
+
+A job can take a minute or more. `extract()` waits up to `timeout`, which is one hour by default. If a job fails, is cancelled, or does not end within `timeout`, `extract()` rejects with a `PageIndexError` whose `details.job` holds the job. A job that does not end in time continues in the cloud: read it later with `getExtract(jobId)`.
+
+With `citeSources`, `extract_metadata.field_metadata` gives the page of each list item by its JSON Pointer, e.g. `{ "/items/0": { page: 3 } }`. A schema without lists gets no entries.
 
 ## Chat API
 
@@ -238,11 +244,18 @@ try {
 } catch (error) {
   if (error instanceof PageIndexError) {
     console.log(error.code); // "NOT_FOUND" | "UNAUTHORIZED" | "PLAN_REQUIRED" | ...
-    console.log(error.statusCode); // The HTTP status, e.g. 409 for a document still processing
+    console.log(error.statusCode); // The HTTP status
     console.log(error.message);
   }
 }
 ```
+
+| Status | `code` | Cause |
+| --- | --- | --- |
+| 402 | `USAGE_LIMIT_REACHED` | The account has not enough credits |
+| 404 | `NOT_FOUND` | The document, collection or job does not exist |
+| 409 | `INTERNAL_ERROR` | The document is still processing, or the job has already ended. Read `statusCode`, not `code` |
+| (none) | `INVALID_INPUT` | The SDK refused the arguments before it sent a request |
 
 ## Examples
 
