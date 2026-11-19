@@ -1,7 +1,15 @@
 import { mkdtemp, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import {
+  afterAll,
+  afterEach,
+  beforeAll,
+  describe,
+  expect,
+  it,
+  vi,
+} from "vitest";
 import { PageIndexError } from "../src/errors.js";
 import { PageExtractClient } from "../src/page-extract.js";
 import { type SentRequest, serve } from "./helpers.js";
@@ -40,22 +48,25 @@ function replies(...answers: unknown[]) {
 }
 
 describe("PageExtractClient.extract", () => {
-  it("uploads a file without an index and waits for the result", async () => {
+  it("uploads a file with its job and waits for the result", async () => {
     const done = {
       id: "ext_1",
       status: "completed",
       extract_result: { total: 5 },
     };
-    const later = [{ id: "ext_1", status: "running" }, done];
-    const sent = serve(({ method, path }) => {
+    const later = [
+      { id: "ext_1", status: "pending" },
+      { id: "ext_1", status: "running" },
+      done,
+    ];
+    const sent = serve(({ path }) => {
       if (path === "/collections/") {
         return { collections: [{ id: "c-9", name: "Page Extract" }], total: 1 };
       }
-      if (path === "/doc/") return { doc_id: "pi-1", name: "sample.pdf" };
-      if (path === "/doc/pi-1/metadata") return { id: "pi-1", status: "completed" };
-      return method === "POST"
-        ? [202, { id: "ext_1", status: "pending" }]
-        : later.shift();
+      if (path === "/doc/") {
+        return { doc_id: "pi-1", name: "sample.pdf", extract_job_id: "ext_1" };
+      }
+      return later.shift();
     });
     const schema = {
       type: "object",
@@ -70,24 +81,106 @@ describe("PageExtractClient.extract", () => {
 
     expect(job).toEqual(done);
     expect(job.extract_result?.total).toBe(5);
+    // One upload starts the job: no wait for the document, no POST /extract/.
     expect(sent.map((r) => [r.method, r.path])).toEqual([
       ["GET", "/collections/"],
       ["POST", "/doc/"],
-      ["GET", "/doc/pi-1/metadata"],
-      ["POST", "/extract/"],
+      ["GET", "/extract/ext_1/"],
       ["GET", "/extract/ext_1/"],
       ["GET", "/extract/ext_1/"],
     ]);
     expect(sent[1]?.file).toEqual({ name: "sample.pdf", size: 4 });
-    expect(sent[1]?.form).toEqual({ algorithm: "none", collection_id: "c-9" });
-    expect(sent[3]?.form?.doc_id).toBe("pi-1");
-    expect(JSON.parse(sent[3]?.form?.configuration ?? "")).toEqual({
+    const { extract, ...form } = sent[1]?.form ?? {};
+    expect(form).toEqual({ algorithm: "none", collection_id: "c-9" });
+    expect(JSON.parse(extract ?? "")).toEqual({
       data_schema: schema,
       tier: "standard",
       target_pages: "3-9",
       cite_sources: true,
       system_prompt: "Totals in USD.",
     });
+  });
+
+  it("resolves with the job an upload started, without waiting", async () => {
+    const sent = replies(
+      { collections: [{ id: "c-9", name: "Page Extract" }], total: 1 },
+      { doc_id: "pi-1", extract_job_id: "ext_1" },
+      { id: "ext_1", status: "pending", doc_id: "pi-1" },
+    );
+    expect(await client().extract(pdf, object, { wait: false })).toEqual({
+      id: "ext_1",
+      status: "pending",
+      doc_id: "pi-1",
+    });
+    expect(sent).toHaveLength(3);
+
+    // The job started, but reading it failed: the error names it.
+    replies(
+      { collections: [{ id: "c-9", name: "Page Extract" }], total: 1 },
+      { doc_id: "pi-1", extract_job_id: "ext_1" },
+      [502, { detail: "Bad gateway" }],
+    );
+    const error = await client()
+      .extract(pdf, object)
+      .catch((e) => e);
+    expect(error.message).toMatch("started extract job ext_1");
+    expect(error.statusCode).toBe(502);
+    expect(error.details).toEqual({ jobId: "ext_1" });
+  });
+
+  it("starts the job itself when the upload started none", async () => {
+    const done = { id: "ext_1", status: "completed", extract_result: {} };
+    const collections = {
+      collections: [{ id: "c-9", name: "Page Extract" }],
+      total: 1,
+    };
+
+    // A server older than extraction on upload.
+    let sent = replies(
+      collections,
+      { doc_id: "pi-1", name: "sample.pdf" },
+      { id: "pi-1", status: "completed" },
+      [202, done],
+    );
+    expect(await client().extract(pdf, object)).toEqual(done);
+    expect(sent.map((r) => [r.method, r.path])).toEqual([
+      ["GET", "/collections/"],
+      ["POST", "/doc/"],
+      ["GET", "/doc/pi-1/metadata"],
+      ["POST", "/extract/"],
+    ]);
+    expect(sent[3]?.form?.doc_id).toBe("pi-1");
+
+    // The same file, stored already, its pages still being read.
+    const stillRead = {
+      message:
+        "This file was uploaded already, and its pages are still being read.",
+      doc_id: "pi-7",
+    };
+    sent = replies(
+      collections,
+      [409, { detail: stillRead }],
+      { id: "pi-7", status: "processing" },
+      { id: "pi-7", status: "completed" },
+      [202, done],
+    );
+    expect(await client().extract(pdf, object)).toEqual(done);
+    expect(sent.map((r) => [r.method, r.path])).toEqual([
+      ["GET", "/collections/"],
+      ["POST", "/doc/"],
+      ["GET", "/doc/pi-7/metadata"],
+      ["GET", "/doc/pi-7/metadata"],
+      ["POST", "/extract/"],
+    ]);
+    expect(sent[4]?.form?.doc_id).toBe("pi-7");
+
+    // A 409 that names no document stands.
+    replies(collections, [409, { detail: "Conflict." }]);
+    const error = await client()
+      .extract(pdf, object)
+      .catch((e) => e);
+    expect(error.statusCode).toBe(409);
+    expect(error.message).toBe("Conflict.");
   });
 
   it("stores a file in the collection named", async () => {
@@ -99,13 +192,17 @@ describe("PageExtractClient.extract", () => {
       if (path === "/collection/") {
         // The same name to the cloud's collation.
         if (json?.name === "Invöices") {
-          return [409, { detail: "A collection with this name already exists." }];
+          return [
+            409,
+            { detail: "A collection with this name already exists." },
+          ];
         }
         stored.push({ id: "c-new", name: String(json?.name) });
         return { collection: stored.at(-1) };
       }
       if (path === "/doc/") return { doc_id: "pi-1", name: "sample.pdf" };
-      if (path === "/doc/pi-1/metadata") return { id: "pi-1", status: "completed" };
+      if (path === "/doc/pi-1/metadata")
+        return { id: "pi-1", status: "completed" };
       return [202, { id: "ext_1", status: "pending" }];
     });
     const extractor = client();
@@ -145,7 +242,8 @@ describe("PageExtractClient.extract", () => {
         }
         return { doc_id: "pi-1", name: "sample.pdf" };
       }
-      if (path === "/doc/pi-1/metadata") return { id: "pi-1", status: "completed" };
+      if (path === "/doc/pi-1/metadata")
+        return { id: "pi-1", status: "completed" };
       return [202, { id: "ext_1", status: "pending" }];
     });
     const extractor = client();
@@ -236,7 +334,9 @@ describe("PageExtractClient.extract", () => {
       .extract("pi-1", object)
       .catch((e) => e);
     expect(failed).toBeInstanceOf(PageIndexError);
-    expect(failed.message).toBe("Extract job ext_1 failed: The PDF has no text.");
+    expect(failed.message).toBe(
+      "Extract job ext_1 failed: The PDF has no text.",
+    );
     expect(failed.details.job.status).toBe("failed");
 
     ends({ status: "cancelled" });
@@ -272,9 +372,12 @@ describe("PageExtractClient.extract", () => {
       "fetch",
       vi.fn(async (_input: string, init?: RequestInit) => {
         if (init?.method === "POST") {
-          return new Response(JSON.stringify({ id: "ext_1", status: "pending" }), {
-            status: 202,
-          });
+          return new Response(
+            JSON.stringify({ id: "ext_1", status: "pending" }),
+            {
+              status: 202,
+            },
+          );
         }
         throw new TypeError("fetch failed");
       }),
@@ -287,7 +390,11 @@ describe("PageExtractClient.extract", () => {
 
 describe("PageExtractClient jobs", () => {
   it("waits for a job", async () => {
-    const done = { id: "ext_1", status: "completed", extract_result: { total: 5 } };
+    const done = {
+      id: "ext_1",
+      status: "completed",
+      extract_result: { total: 5 },
+    };
     const sent = replies({ id: "ext_1", status: "running" }, done);
     expect(await client().waitExtract("ext_1")).toEqual(done);
     expect(sent.map((r) => [r.method, r.path])).toEqual([

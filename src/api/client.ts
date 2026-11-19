@@ -78,6 +78,9 @@ export class PageIndexApi {
     if (options?.metadata !== undefined) {
       formData.append("metadata", JSON.stringify(options.metadata));
     }
+    if (options?.extract !== undefined) {
+      formData.append("extract", JSON.stringify(options.extract));
+    }
     return this.requestMultipart<SubmitDocumentResponse>("/doc/", formData);
   }
 
@@ -484,11 +487,8 @@ export class PageIndexApi {
 
       try {
         const json = JSON.parse(text) as Record<string, unknown>;
-        if (json.error && typeof json.error === "string") {
-          message = json.error;
-        } else if (json.detail && typeof json.detail === "string") {
-          message = json.detail;
-        }
+        const said = messageOf(json.error) ?? messageOf(json.detail);
+        if (said) message = said;
         if (json.errorCode && typeof json.errorCode === "string") {
           errorCode = json.errorCode as typeof errorCode;
         }
@@ -521,4 +521,14 @@ export class PageIndexApi {
         return "INTERNAL_ERROR" as const;
     }
   }
+}
+
+/** A message the API sent: a string, or an object's `message`. */
+function messageOf(value: unknown): string | undefined {
+  if (typeof value === "string") return value || undefined;
+  if (value && typeof value === "object") {
+    const { message } = value as { message?: unknown };
+    if (typeof message === "string" && message) return message;
+  }
+  return undefined;
 }

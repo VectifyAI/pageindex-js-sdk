@@ -80,7 +80,7 @@ If you do not pass `apiKey`, the client reads `PAGEINDEX_API_KEY`. If that varia
 | `deleteExtract(jobId)`                     | Delete an extract job                           |
 | `chatCompletions(params)`                  | Chat with documents (streaming & non-streaming) |
 
-`submitDocument` takes `{ index: false }` to store the pages and build no outline index. Such an upload costs less. `buildOutlineIndex()` builds the index later.
+`submitDocument` takes `{ index: false }` to store the pages and build no outline index. Such an upload costs less. `buildOutlineIndex()` builds the index later. With `index: false`, `extract` starts an extract job on the uploaded PDF, and the upload is not charged on its own.
 
 ## Page Search (`PageSearchClient`)
 
@@ -133,7 +133,7 @@ const schema = {
   properties: { total: { type: 'number' }, currency: { type: 'string' } },
 };
 
-// From a file: it is uploaded to the "Page Extract" collection first
+// From a file: it is uploaded to the "Page Extract" collection with the job
 const job = await extract.extract<{ total: number; currency: string }>(
   { path: './invoice.pdf' },
   schema,
@@ -147,6 +147,8 @@ const completed = await extract.waitExtract(pending.id);
 ```
 
 A string is a `doc_id`. To upload a file, pass bytes, a `Blob`, or `{ path }`. With Zod, pass `z.toJSONSchema(schema)` as the schema.
+
+A file is uploaded with its job, and the upload is not charged on its own. The job costs its extraction, but not less than the file's upload price for all its pages, also when you pass `pages`. If the job fails or is cancelled after it has read the file, it costs the upload price.
 
 A job can take a minute or more. `extract()` waits up to `timeout`, which is one hour by default. If a job fails, is cancelled, or does not end within `timeout`, `extract()` rejects with a `PageIndexError` whose `details.job` holds the job. A job that does not end in time continues in the cloud: read it later with `getExtract(jobId)`.
 

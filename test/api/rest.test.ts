@@ -48,6 +48,20 @@ describe("submitDocument", () => {
     await api("f-scope").submitDocument(new Uint8Array([1]), "a.pdf");
     expect(sent[0]?.form).toEqual({ folder_id: "f-scope" });
   });
+
+  it("sends an extraction to start with the upload", async () => {
+    const sent = serve(() => ({ doc_id: "pi-1", extract_job_id: "ext_1" }));
+    const configuration = { data_schema: { type: "object" }, tier: "pro" };
+
+    const result = await api().submitDocument(new Uint8Array([1]), "a.pdf", {
+      index: false,
+      extract: configuration,
+    });
+
+    expect(result.extract_job_id).toBe("ext_1");
+    expect(sent[0]?.form?.algorithm).toBe("none");
+    expect(JSON.parse(sent[0]?.form?.extract ?? "")).toEqual(configuration);
+  });
 });
 
 describe("errors", () => {
@@ -59,6 +73,26 @@ describe("errors", () => {
     expect(error).toBeInstanceOf(PageIndexError);
     expect(error.message).toBe("The document's pages are not ready.");
     expect(error.statusCode).toBe(409);
+
+    // A detail or an error that is an object: its message, and the body kept.
+    const detail = { message: "Still being read.", doc_id: "pi-7" };
+    serve(() => [409, { detail }]);
+    const stored = await api()
+      .searchPages("d", { questions: ["q"] })
+      .catch((e) => e);
+    expect(stored.message).toBe("Still being read.");
+    expect(stored.details.detail).toEqual(detail);
+    serve(() => [
+      400,
+      {
+        detail: "Bad",
+        error: { type: "invalid_request", message: "Bad page range." },
+      },
+    ]);
+    const invalid = await api()
+      .searchPages("d", { questions: ["q"] })
+      .catch((e) => e);
+    expect(invalid.message).toBe("Bad page range.");
   });
 
   it("names a 402 USAGE_LIMIT_REACHED", async () => {
@@ -121,7 +155,10 @@ describe("extract jobs", () => {
       method === "POST" ? [202, { id: "ext/1" }] : { id: "ext/1" },
     );
     const client = api();
-    const configuration = { data_schema: { type: "object" }, tier: "pro" as const };
+    const configuration = {
+      data_schema: { type: "object" },
+      tier: "pro" as const,
+    };
 
     await client.createExtract({ docId: "pi-1", configuration });
     await client.getExtract("ext/1");
