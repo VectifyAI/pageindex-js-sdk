@@ -185,6 +185,60 @@ describe("PageExtractClient.extract", () => {
     expect(error.message).toBe("Conflict.");
   });
 
+  it.each([
+    // Its job did not complete, and failed it.
+    [
+      "fails",
+      [
+        { id: "pi-7", status: "failed" },
+        { id: "pi-7", status: "failed" },
+      ],
+    ],
+    ["is deleted", [[404, { detail: "Document not found." }]]],
+  ])("uploads again when the document it waited for %s", async (_, reads) => {
+    // Stored by another job, still processing.
+    const sent = replies(
+      { collections: [{ id: "c-9", name: "Page Extract" }], total: 1 },
+      [409, { detail: { message: "Still processing.", doc_id: "pi-7" } }],
+      ...reads,
+      { doc_id: "pi-8", extract_job_id: "ext_1" },
+      { id: "ext_1", status: "pending", doc_id: "pi-8" },
+    );
+    expect(await client().extract(pdf, object, { wait: false })).toEqual({
+      id: "ext_1",
+      status: "pending",
+      doc_id: "pi-8",
+    });
+    expect(sent.map((r) => [r.method, r.path])).toEqual([
+      ["GET", "/collections/"],
+      ["POST", "/doc/"],
+      ...reads.map(() => ["GET", "/doc/pi-7/metadata"]),
+      ["POST", "/doc/"],
+      ["GET", "/extract/ext_1/"],
+    ]);
+  });
+
+  it("rejects when the document it waited for fails again", async () => {
+    const stored = [
+      409,
+      { detail: { message: "Still processing.", doc_id: "pi-7" } },
+    ];
+    const failed = { id: "pi-7", status: "failed" };
+    const sent = replies(
+      { collections: [{ id: "c-9", name: "Page Extract" }], total: 1 },
+      stored,
+      failed,
+      failed,
+      stored,
+      failed,
+    );
+    const error = await client()
+      .extract(pdf, object)
+      .catch((e) => e);
+    expect(error.message).toMatch("failed");
+    expect(sent.filter((r) => r.path === "/doc/")).toHaveLength(2);
+  });
+
   it("stores a file in the collection named", async () => {
     const stored = [{ id: "c-1", name: "Invoices" }];
     const sent = serve(({ path, json }) => {
