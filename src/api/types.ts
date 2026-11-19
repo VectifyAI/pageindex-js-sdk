@@ -13,12 +13,26 @@ export interface SubmitDocumentOptions {
    * Defaults to `true`.
    */
   index?: boolean;
+  /**
+   * With a PDF and `index: false`: an extract job's configuration, as
+   * `createExtract()` takes it. The job starts on the document, its id is the
+   * answer's `extract_job_id`, and the upload is not charged on its own: a
+   * completed job costs its extraction, but not less than the upload. A file
+   * stored already whose pages are still being read starts no job: the
+   * upload rejects with status 409, and the error's `details.detail.doc_id`
+   * names the stored document.
+   */
+  extract?: ExtractConfiguration;
 }
 
 export interface SubmitDocumentResponse {
   doc_id: string;
   /** The stored name; a taken name gains a numeric suffix. */
   name?: string;
+  /** The same file was stored already; this is that document. */
+  duplicate?: boolean;
+  /** With `extract`: the job the upload started. */
+  extract_job_id?: string;
 }
 
 export interface GetDocumentMetadataResponse {

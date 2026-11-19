@@ -5,6 +5,7 @@ import type {
   ExtractTier,
   ListExtractsOptions,
   ListExtractsResponse,
+  SubmitDocumentResponse,
 } from "./api/types.js";
 import type { PageIndexClient } from "./client.js";
 import { PageIndexError } from "./errors.js";
@@ -24,8 +25,9 @@ export interface PageExtractOptions {
   /** Default: `"standard"`. */
   tier?: ExtractTier;
   /**
-   * Extract from these pages only, and charge the extraction for them alone:
-   * `"3-9"`, `[3, 9]` or `3`.
+   * Extract from these pages only: `"3-9"`, `[3, 9]` or `3`. The extraction is
+   * charged for them alone, but a file still costs at least its upload price,
+   * for all its pages.
    */
   pages?: string | number | [first: number, last: number];
   /** Give the page each list item is on, under `extract_metadata`. */
@@ -36,7 +38,7 @@ export interface PageExtractOptions {
    * Resolve with the job once it is completed (default), up to `timeout`.
    * Rejects if it failed or was cancelled, or is not done in time; it goes on
    * running, so read it with `getExtract()`. `false` resolves with the job
-   * pending once it starts. A file is uploaded and processed first either way.
+   * pending once it starts.
    */
   wait?: boolean;
   /**
@@ -93,9 +95,11 @@ export class PageExtractClient {
    *
    * @param document The `doc_id` of an uploaded document; one still
    *   processing is waited for first, and with `wait: false` rejects with HTTP
-   *   409. Or a file: it is uploaded to `collection` first, with no outline
-   *   index built (the upload is charged for every page of the file), and
-   *   uploading the same file again uses the stored document.
+   *   409. Or a file: it is uploaded to `collection` with the job, with no
+   *   outline index built, and the job is the only charge: the extraction, but
+   *   not less than the file's upload price ($0.10 per 1,000 pages), which is
+   *   also what the job costs if it fails or is cancelled after reading the
+   *   file. Uploading the same file again uses the stored document.
    * @param schema A JSON Schema whose top is an object or an array. With Zod,
    *   pass `z.toJSONSchema(schema)`.
    * @returns The job. Once completed, `extract_result` holds the JSON.
@@ -121,34 +125,29 @@ export class PageExtractClient {
       }
       docId = document;
     } else {
-      const file = await readFileInput(document, options.fileName);
-      const collection =
+      const stored = await this.store(
+        await readFileInput(document, options.fileName),
         options.collection === undefined
           ? PAGE_EXTRACT_COLLECTION
-          : options.collection;
-      const store = async () => {
-        const { doc_id } = await api.submitDocument(file.blob, file.fileName, {
-          collectionId: await this.collectionId(collection),
-          index: false,
-        });
-        await api.waitDocument(doc_id, {
-          timeout: remaining(),
-          signal: options.signal,
-        });
-        return doc_id;
-      };
-      try {
-        docId = await store();
-      } catch (error) {
-        // The collection found earlier is gone: find or make it again.
-        const gone =
-          error instanceof PageIndexError &&
-          error.statusCode === 404 &&
-          collection !== null &&
-          this.collections.delete(collection);
-        if (!gone) throw error;
-        docId = await store();
+          : options.collection,
+        configuration,
+      );
+      if (stored.extract_job_id) {
+        const job = await this.readStarted<T>(
+          stored.extract_job_id,
+          options.signal,
+        );
+        return options.wait === false
+          ? job
+          : this.done(job, deadline, timeout, options.signal);
       }
+      // No job started: the file is stored already and its pages are still
+      // being read, or the server is older than extraction on upload.
+      docId = stored.doc_id;
+      await api.waitDocument(docId, {
+        timeout: remaining(),
+        signal: options.signal,
+      });
     }
 
     let job: ExtractJob<T>;
@@ -203,8 +202,9 @@ export class PageExtractClient {
   }
 
   /**
-   * Stops a pending or running extract job; nothing is charged. A job that
-   * has already ended rejects with HTTP 409.
+   * Stops a pending or running extract job; nothing is charged, but for a job
+   * started with its file's upload that has read the file: the upload price.
+   * A job that has already ended rejects with HTTP 409.
    */
   cancelExtract(jobId: string): Promise<ExtractJob> {
     return this.pageindex.api.cancelExtract(jobId);
@@ -213,6 +213,60 @@ export class PageExtractClient {
   /** Deletes an extract job and its result. The document it read stays. */
   deleteExtract(jobId: string): Promise<DeleteExtractResponse> {
     return this.pageindex.api.deleteExtract(jobId);
+  }
+
+  /**
+   * Uploads a file with the extraction's configuration, so the upload starts
+   * the job. A file stored already whose pages are still being read starts
+   * none: its document comes back with `duplicate`.
+   */
+  private async store(
+    file: { blob: Blob; fileName: string },
+    collection: string | null,
+    configuration: ExtractConfiguration,
+  ): Promise<SubmitDocumentResponse> {
+    const upload = async () =>
+      this.pageindex.api.submitDocument(file.blob, file.fileName, {
+        collectionId: await this.collectionId(collection),
+        index: false,
+        extract: configuration,
+      });
+    try {
+      try {
+        return await upload();
+      } catch (error) {
+        // The collection found earlier is gone: find or make it again.
+        const gone =
+          error instanceof PageIndexError &&
+          error.statusCode === 404 &&
+          collection !== null &&
+          this.collections.delete(collection);
+        if (!gone) throw error;
+        return await upload();
+      }
+    } catch (error) {
+      const docId = storedDocumentOf(error);
+      if (docId === undefined) throw error;
+      return { doc_id: docId, duplicate: true };
+    }
+  }
+
+  /** Reads the job an upload started; a failure names the job. */
+  private async readStarted<T>(
+    jobId: string,
+    signal?: AbortSignal,
+  ): Promise<ExtractJob<T>> {
+    try {
+      return await this.pageindex.api.getExtract<T>(jobId, signal);
+    } catch (error) {
+      if (signal?.aborted) throw error;
+      throw new PageIndexError(
+        `The upload started extract job ${jobId}, which could not be read: ${(error as Error).message}. It may be running in the cloud: read it with getExtract(jobId), or stop it with cancelExtract(jobId).`,
+        error instanceof PageIndexError ? error.code : undefined,
+        { jobId },
+        error instanceof PageIndexError ? error.statusCode : undefined,
+      );
+    }
   }
 
   private async done<T>(
@@ -315,4 +369,20 @@ function configurationOf(
   if (options.citeSources) configuration.cite_sources = true;
   if (options.systemPrompt) configuration.system_prompt = options.systemPrompt;
   return configuration;
+}
+
+/**
+ * The stored document a 409 upload names: the same file, uploaded already,
+ * whose pages are still being read.
+ */
+function storedDocumentOf(error: unknown): string | undefined {
+  if (!(error instanceof PageIndexError) || error.statusCode !== 409) {
+    return undefined;
+  }
+  const detail = error.details?.detail;
+  if (detail && typeof detail === "object") {
+    const { doc_id } = detail as { doc_id?: unknown };
+    if (typeof doc_id === "string" && doc_id) return doc_id;
+  }
+  return undefined;
 }
