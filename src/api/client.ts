@@ -1,21 +1,39 @@
 import { PageIndexError } from "../errors.js";
+import { sleep } from "../internal.js";
 import type {
+  BuildOutlineIndexResponse,
   ChatCompletionChunk,
   ChatCompletionsParams,
   ChatCompletionsResponse,
+  CreateCollectionOptions,
+  CreateCollectionResponse,
+  CreateExtractOptions,
   CreateFolderOptions,
   CreateFolderResponse,
+  DeleteCollectionResponse,
   DeleteDocumentResponse,
+  DeleteExtractResponse,
+  ExtractJob,
   GetDocumentMetadataResponse,
   GetTreeOptions,
   GetTreeResponse,
+  ListCollectionsResponse,
   ListDocumentsOptions,
   ListDocumentsResponse,
+  ListExtractsOptions,
+  ListExtractsResponse,
   ListFoldersOptions,
   ListFoldersResponse,
+  SearchDocumentsOptions,
+  SearchDocumentsResponse,
+  SearchPagesOptions,
+  SearchPagesResponse,
   SubmitDocumentOptions,
   SubmitDocumentResponse,
+  WaitDocumentOptions,
 } from "./types.js";
+
+const DEFAULT_DOCUMENT_TIMEOUT = 1_800_000;
 
 export interface PageIndexApiConfig {
   apiUrl: string;
@@ -45,16 +63,99 @@ export class PageIndexApi {
         ? file
         : new Blob([file], { type: "application/octet-stream" });
     formData.append("file", blob, fileName);
-    const folderId = options?.folderId ?? this.folderScope;
+    if (options?.index === false) {
+      formData.append("algorithm", "none");
+    }
+    const folderId =
+      options?.folderId ??
+      (options?.collectionId === undefined ? this.folderScope : undefined);
     if (folderId) {
       formData.append("folder_id", folderId);
+    }
+    if (options?.collectionId !== undefined) {
+      formData.append("collection_id", options.collectionId);
+    }
+    if (options?.metadata !== undefined) {
+      formData.append("metadata", JSON.stringify(options.metadata));
     }
     return this.requestMultipart<SubmitDocumentResponse>("/doc/", formData);
   }
 
-  async getDocument(docId: string): Promise<GetDocumentMetadataResponse> {
+  /**
+   * Waits until a document's processing is done, and returns it as
+   * `getDocument()` does. Rejects if the processing failed, or is not done
+   * within `timeout` (it goes on in the cloud). Three poll failures in a row
+   * reject too; a 401, 403 or 404 rejects at once.
+   */
+  async waitDocument(
+    docId: string,
+    options?: WaitDocumentOptions,
+  ): Promise<GetDocumentMetadataResponse> {
+    const timeout = options?.timeout ?? DEFAULT_DOCUMENT_TIMEOUT;
+    const deadline = Date.now() + timeout;
+    let interval = 2000;
+    let pollFailures = 0;
+    while (true) {
+      let status: string | undefined;
+      try {
+        const doc = await this.getDocument(docId, options?.signal);
+        pollFailures = 0;
+        if (doc.status === "completed") return doc;
+        status = doc.status;
+      } catch (error) {
+        if (options?.signal?.aborted) throw error;
+        if (
+          error instanceof PageIndexError &&
+          [401, 403, 404].includes(error.statusCode ?? 0)
+        ) {
+          throw error;
+        }
+        pollFailures += 1;
+        if (pollFailures >= 3) {
+          throw new PageIndexError(
+            `Could not poll document status (doc_id: ${docId}): ${(error as Error).message}. Processing continues in the cloud; poll getDocument() for status.`,
+            error instanceof PageIndexError ? error.code : "INTERNAL_ERROR",
+            undefined,
+            error instanceof PageIndexError ? error.statusCode : undefined,
+          );
+        }
+      }
+      if (status === "failed") {
+        throw new PageIndexError(
+          `Document processing failed (doc_id: ${docId}).`,
+          "INTERNAL_ERROR",
+        );
+      }
+      if (Date.now() >= deadline) {
+        throw new PageIndexError(
+          `Timed out after ${Math.round(timeout / 1000)}s waiting for document processing (doc_id: ${docId}, last status: ${status}). Processing continues in the cloud; poll getDocument() for status.`,
+          "INTERNAL_ERROR",
+        );
+      }
+      await sleep(interval, options?.signal);
+      interval = Math.min(interval * 1.5, 15_000);
+    }
+  }
+
+  /**
+   * Starts building the outline index of a document stored without one
+   * (`index: false`). Charged as an upload that builds its index. Read
+   * `getTree()`'s `index_status` to see when it is built.
+   */
+  async buildOutlineIndex(docId: string): Promise<BuildOutlineIndexResponse> {
+    return this.request<BuildOutlineIndexResponse>(
+      `/doc/${encodeURIComponent(docId)}/index`,
+      { method: "POST" },
+    );
+  }
+
+  async getDocument(
+    docId: string,
+    signal?: AbortSignal,
+  ): Promise<GetDocumentMetadataResponse> {
     return this.request<GetDocumentMetadataResponse>(
       `/doc/${encodeURIComponent(docId)}/metadata`,
+      { signal },
     );
   }
 
@@ -124,6 +225,138 @@ export class PageIndexApi {
     return this.request<ListFoldersResponse>(`/folders/${qs ? `?${qs}` : ""}`);
   }
 
+  async listCollections(): Promise<ListCollectionsResponse> {
+    return this.request<ListCollectionsResponse>("/collections/");
+  }
+
+  async createCollection(
+    options: CreateCollectionOptions,
+  ): Promise<CreateCollectionResponse> {
+    return this.requestJson<CreateCollectionResponse>("POST", "/collection/", {
+      name: options.name,
+      description: options.description,
+    });
+  }
+
+  /** Deletes a collection and every document in it. */
+  async deleteCollection(
+    collectionId: string,
+  ): Promise<DeleteCollectionResponse> {
+    return this.request<DeleteCollectionResponse>(
+      `/collection/${encodeURIComponent(collectionId)}/`,
+      { method: "DELETE" },
+    );
+  }
+
+  /**
+   * Judges each page of one document on how likely it helps answer each
+   * question. Every page searched is charged. A document still processing is
+   * refused with HTTP 409.
+   */
+  async searchPages(
+    docId: string,
+    options: SearchPagesOptions,
+  ): Promise<SearchPagesResponse> {
+    return this.requestJson<SearchPagesResponse>(
+      "POST",
+      `/doc/${encodeURIComponent(docId)}/page-search/`,
+      {
+        questions: options.questions,
+        top_k: options.topK,
+        include_text: options.includeText ?? false,
+        start_page: options.startPage,
+        end_page: options.endPage,
+      },
+      options.signal,
+    );
+  }
+
+  /**
+   * Judges each document in scope on how likely it holds what answers each
+   * question. Every document judged is charged. Without `documentIds`, every
+   * document in scope, up to 1,000; more is refused with HTTP 400.
+   */
+  async searchDocuments(
+    options: SearchDocumentsOptions,
+  ): Promise<SearchDocumentsResponse> {
+    return this.requestJson<SearchDocumentsResponse>(
+      "POST",
+      "/docs/search/",
+      {
+        questions: options.questions,
+        document_ids: options.documentIds,
+        collection_id: options.collectionId,
+        folder_id: options.folderId,
+        recursive: options.recursive ?? false,
+        metadata_filter: options.metadataFilter,
+        top_k: options.topK,
+      },
+      options.signal,
+    );
+  }
+
+  /**
+   * Starts an extract job on an uploaded document. A document still
+   * processing is refused with HTTP 409.
+   */
+  async createExtract<T = unknown>(
+    options: CreateExtractOptions,
+  ): Promise<ExtractJob<T>> {
+    return this.request<ExtractJob<T>>("/extract/", {
+      method: "POST",
+      body: new URLSearchParams({
+        configuration: JSON.stringify(options.configuration),
+        doc_id: options.docId,
+      }),
+      signal: options.signal,
+    });
+  }
+
+  /** An extract job, with its result once it is completed. */
+  async getExtract<T = unknown>(
+    jobId: string,
+    signal?: AbortSignal,
+  ): Promise<ExtractJob<T>> {
+    return this.request<ExtractJob<T>>(
+      `/extract/${encodeURIComponent(jobId)}/`,
+      { signal },
+    );
+  }
+
+  /** Your extract jobs, newest first, without their results. */
+  async listExtracts(
+    options?: ListExtractsOptions,
+  ): Promise<ListExtractsResponse> {
+    const params = new URLSearchParams({
+      limit: String(options?.limit ?? 20),
+    });
+    if (options?.after !== undefined) {
+      params.set("after", options.after);
+    }
+    return this.request<ListExtractsResponse>(
+      `/extracts/?${params.toString()}`,
+    );
+  }
+
+  /**
+   * Stops a pending or running extract job; nothing is charged. A job that
+   * has already ended is refused with HTTP 409.
+   */
+  async cancelExtract(jobId: string): Promise<ExtractJob> {
+    return this.request<ExtractJob>(
+      `/extract/${encodeURIComponent(jobId)}/cancel/`,
+      { method: "POST" },
+    );
+  }
+
+  /** Deletes an extract job and its result. The document it read stays. */
+  async deleteExtract(jobId: string): Promise<DeleteExtractResponse> {
+    return this.request<DeleteExtractResponse>(
+      `/extract/${encodeURIComponent(jobId)}/`,
+      { method: "DELETE" },
+    );
+  }
+
   async chatCompletions(
     params: ChatCompletionsParams & { stream: true },
   ): Promise<AsyncIterable<ChatCompletionChunk>>;
@@ -153,6 +386,21 @@ export class PageIndexApi {
       },
     });
     return this.handleResponse<T>(response);
+  }
+
+  /** A JSON request; fields set to `undefined` are left out. */
+  private requestJson<T>(
+    method: string,
+    path: string,
+    payload: Record<string, unknown>,
+    signal?: AbortSignal,
+  ): Promise<T> {
+    return this.request<T>(path, {
+      method,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+      signal,
+    });
   }
 
   private async requestMultipart<T>(
@@ -238,6 +486,8 @@ export class PageIndexApi {
         const json = JSON.parse(text) as Record<string, unknown>;
         if (json.error && typeof json.error === "string") {
           message = json.error;
+        } else if (json.detail && typeof json.detail === "string") {
+          message = json.detail;
         }
         if (json.errorCode && typeof json.errorCode === "string") {
           errorCode = json.errorCode as typeof errorCode;
@@ -257,6 +507,8 @@ export class PageIndexApi {
     switch (status) {
       case 401:
         return "UNAUTHORIZED" as const;
+      case 402:
+        return "USAGE_LIMIT_REACHED" as const;
       case 403:
         return "PLAN_REQUIRED" as const;
       case 404:
