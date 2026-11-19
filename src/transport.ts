@@ -6,6 +6,7 @@ import type {
 } from "@modelcontextprotocol/sdk/types.js";
 import pkg from "../package.json" assert { type: "json" };
 import { PageIndexError, type PageIndexErrorCode } from "./errors.js";
+import { MCP_RETRY, fetchWithRetry } from "./retry.js";
 
 export class McpTransport {
   private client = new Client(
@@ -68,6 +69,7 @@ export class McpTransport {
     }
     this.transport = new StreamableHTTPClientTransport(url, {
       requestInit: { headers },
+      fetch: (input, init) => fetchWithRetry(input, init, MCP_RETRY),
     });
     await this.client.connect(this.transport);
     this.connected = true;
@@ -148,6 +150,13 @@ export interface PagePicture {
   mimeType: string;
 }
 
+// The account-level tool errors, as the HTTP status they stand for, so a
+// caller checks `statusCode === 402` the same way for REST and MCP calls.
+const ACCOUNT_LIMITS: Partial<Record<PageIndexErrorCode, number>> = {
+  USAGE_LIMIT_REACHED: 402,
+  RATE_LIMITED: 429,
+};
+
 // The MCP server checks arguments against the advertised schema before the
 // tool runs and answers a mismatch in plain text with this prefix.
 const SCHEMA_REJECTION_PREFIX = "Input validation error:";
@@ -182,7 +191,12 @@ export function parseJsonResult<T>(r: CallToolResult): T {
       errorCode?: PageIndexErrorCode;
       [key: string]: unknown;
     };
-    throw new PageIndexError(error, errorCode, details);
+    throw new PageIndexError(
+      error,
+      errorCode,
+      details,
+      errorCode ? ACCOUNT_LIMITS[errorCode] : undefined,
+    );
   }
 
   return data as T;

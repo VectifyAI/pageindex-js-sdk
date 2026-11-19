@@ -1,5 +1,6 @@
-import { PageIndexError } from "../errors.js";
+import { PageIndexError, type PageIndexErrorCode } from "../errors.js";
 import { sleep } from "../internal.js";
+import { fetchWithRetry } from "../retry.js";
 import type {
   BuildOutlineIndexResponse,
   ChatCompletionChunk,
@@ -381,7 +382,7 @@ export class PageIndexApi {
 
   private async request<T>(path: string, init?: RequestInit): Promise<T> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, {
+    const response = await fetchWithRetry(url, {
       ...init,
       headers: {
         api_key: this.apiKey,
@@ -411,7 +412,7 @@ export class PageIndexApi {
     formData: FormData,
   ): Promise<T> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, {
+    const response = await fetchWithRetry(url, {
       method: "POST",
       headers: { api_key: this.apiKey },
       body: formData,
@@ -424,7 +425,7 @@ export class PageIndexApi {
     params: ChatCompletionsParams,
   ): Promise<AsyncIterable<ChatCompletionChunk>> {
     const url = `${this.baseUrl}${path}`;
-    const response = await fetch(url, {
+    const response = await fetchWithRetry(url, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -482,15 +483,18 @@ export class PageIndexApi {
     if (!response.ok) {
       const text = await response.text().catch(() => "");
       let message = `API request failed with status ${response.status}`;
-      let errorCode = this.mapStatusToErrorCode(response.status);
+      let errorCode: PageIndexErrorCode = this.mapStatusToErrorCode(
+        response.status,
+      );
       let details: Record<string, unknown> | undefined;
 
       try {
         const json = JSON.parse(text) as Record<string, unknown>;
         const said = messageOf(json.error) ?? messageOf(json.detail);
         if (said) message = said;
+        if (response.status === 403) errorCode = forbiddenCode(json.error);
         if (json.errorCode && typeof json.errorCode === "string") {
-          errorCode = json.errorCode as typeof errorCode;
+          errorCode = json.errorCode as PageIndexErrorCode;
         }
         details = json;
       } catch {
@@ -510,7 +514,7 @@ export class PageIndexApi {
       case 402:
         return "USAGE_LIMIT_REACHED" as const;
       case 403:
-        return "PLAN_REQUIRED" as const;
+        return "FORBIDDEN" as const;
       case 404:
         return "NOT_FOUND" as const;
       case 429:
@@ -531,4 +535,35 @@ function messageOf(value: unknown): string | undefined {
     if (typeof message === "string" && message) return message;
   }
   return undefined;
+}
+
+/** The API's codes for a 403 that a plan or a subscription lifts. */
+const PLAN_LIMITS = new Set([
+  "page_limit_reached",
+  "query_limit_reached",
+  "thinking_limit_reached",
+  "chat_page_limit_reached",
+  "teamspace_page_limit_reached",
+]);
+const NO_SUBSCRIPTION = new Set([
+  "subscription_required",
+  "teamspace_no_subscription",
+]);
+
+/**
+ * A 403 by the API's `error.code`: a plan's limit, no subscription, or
+ * anything else (an invalid API key, a missing permission) as FORBIDDEN.
+ */
+function forbiddenCode(error: unknown) {
+  const code =
+    error && typeof error === "object"
+      ? (error as { code?: unknown }).code
+      : undefined;
+  if (typeof code === "string" && PLAN_LIMITS.has(code)) {
+    return "PLAN_REQUIRED" as const;
+  }
+  if (typeof code === "string" && NO_SUBSCRIPTION.has(code)) {
+    return "SUBSCRIPTION_REQUIRED" as const;
+  }
+  return "FORBIDDEN" as const;
 }

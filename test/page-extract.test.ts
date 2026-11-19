@@ -115,11 +115,13 @@ describe("PageExtractClient.extract", () => {
     expect(sent).toHaveLength(3);
 
     // The job started, but reading it failed: the error names it.
-    replies(
-      { collections: [{ id: "c-9", name: "Page Extract" }], total: 1 },
-      { doc_id: "pi-1", extract_job_id: "ext_1" },
-      [502, { detail: "Bad gateway" }],
-    );
+    serve(({ path }) => {
+      if (path === "/collections/") {
+        return { collections: [{ id: "c-9", name: "Page Extract" }], total: 1 };
+      }
+      if (path === "/doc/") return { doc_id: "pi-1", extract_job_id: "ext_1" };
+      return [502, { detail: "Bad gateway" }];
+    });
     const error = await client()
       .extract(pdf, object)
       .catch((e) => e);

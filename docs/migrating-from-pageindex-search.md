@@ -82,8 +82,8 @@ The results have the same structure: one entry for each question, with the docum
 ## Behavior changes
 
 - Across documents, `@pageindex/search` ran the search on the server. `PageSearchClient` finds the documents first, then searches the pages of each document. The result is the same.
-- `@pageindex/search` sent an `Idempotency-Key` and retried a failed search. `PageSearchClient` does not retry. If you retry a search, the second search is charged too.
-- `@pageindex/search` retried a request that failed with a network error or with status 429, 500, 502, 503 or 504. `@pageindex/sdk` does not retry requests.
+- `@pageindex/search` sent an `Idempotency-Key` and retried a failed search. `PageSearchClient` sends no idempotency key, so it sends a search again only after a 429, or when the search never reached the server. If you retry a search yourself, the second search is charged too.
+- `@pageindex/search` retried a request that failed with a network error or with status 429, 500, 502, 503 or 504. `@pageindex/sdk` retries a GET, PUT or DELETE request that fails with a network error or with status 408, 409, 429 or 5xx, up to two times. It retries a POST only after a 429.
 
 ## Errors
 

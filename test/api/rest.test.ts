@@ -95,6 +95,37 @@ describe("errors", () => {
     expect(invalid.message).toBe("Bad page range.");
   });
 
+  it("names a 403 by the API's error code", async () => {
+    const refused = async (code: string | null, detail: string) => {
+      serve(() => [
+        403,
+        { detail, error: { type: "permission_error", code, message: detail } },
+      ]);
+      return api()
+        .listCollections()
+        .catch((e) => e);
+    };
+    const invalid = await refused(null, "Invalid API key");
+    expect(invalid.code).toBe("FORBIDDEN");
+    expect(invalid.statusCode).toBe(403);
+    expect(invalid.message).toBe("Invalid API key");
+    expect((await refused("page_limit_reached", "Limit")).code).toBe(
+      "PLAN_REQUIRED",
+    );
+    expect((await refused("subscription_required", "Subscribe")).code).toBe(
+      "SUBSCRIPTION_REQUIRED",
+    );
+    // A body without the error object.
+    serve(() => [403, { detail: "Forbidden" }]);
+    expect(
+      (
+        await api()
+          .listCollections()
+          .catch((e) => e)
+      ).code,
+    ).toBe("FORBIDDEN");
+  });
+
   it("names a 402 USAGE_LIMIT_REACHED", async () => {
     serve(() => [402, { detail: "Insufficient credits." }]);
     const error = await api()
@@ -224,7 +255,8 @@ describe("waitDocument", () => {
     await expect(api().waitDocument("pi-1")).rejects.toThrow(
       "Could not poll document status",
     );
-    expect(sent).toHaveLength(3);
+    // Three polls, each sent three times: the first try and two retries.
+    expect(sent).toHaveLength(9);
   });
 
   it("rejects once the timeout has passed", async () => {
