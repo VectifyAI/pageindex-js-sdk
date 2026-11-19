@@ -97,9 +97,11 @@ export class PageExtractClient {
    *   409. Or a file: it is uploaded to `collection` with the job, with no
    *   outline index built. Only the extraction is charged, once the job
    *   completes, and the file is kept as a document from then on; a job that
-   *   fails or is cancelled is not charged, and keeps of a file it uploaded
-   *   only a failed entry with its name. Uploading the same file again uses
-   *   the stored document.
+   *   fails or is cancelled is not charged, and leaves a file it uploaded as a
+   *   failed document, with its name and file but no pages, until you delete
+   *   it. Uploading the same file again uses the stored document, unless it
+   *   failed: then the file is uploaded as a new document, usually under a
+   *   suffixed name such as `name_1.pdf`.
    * @param schema A JSON Schema whose top is an object or an array. With Zod,
    *   pass `z.toJSONSchema(schema)`.
    * @returns The job. Once completed, `extract_result` holds the JSON.
@@ -216,9 +218,10 @@ export class PageExtractClient {
   }
 
   /**
-   * Stops a pending or running extract job: nothing is charged, and of a file
-   * uploaded with it only a failed entry with its name is kept. A job that has
-   * already ended rejects with HTTP 409.
+   * Stops a pending or running extract job: nothing is charged, and a file
+   * uploaded with it stays as a failed document, with its name and file but no
+   * pages, until you delete it. A job that has already ended rejects with HTTP
+   * 409.
    */
   cancelExtract(jobId: string): Promise<ExtractJob> {
     return this.pageindex.api.cancelExtract(jobId);
