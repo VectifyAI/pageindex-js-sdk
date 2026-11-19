@@ -183,6 +183,29 @@ describe("PageExtractClient.extract", () => {
     expect(error.message).toBe("Conflict.");
   });
 
+  it("uploads again when the document it waited for is deleted", async () => {
+    // Stored by another job, which then does not complete and deletes it.
+    const sent = replies(
+      { collections: [{ id: "c-9", name: "Page Extract" }], total: 1 },
+      [409, { detail: { message: "Still processing.", doc_id: "pi-7" } }],
+      [404, { detail: "Document not found." }],
+      { doc_id: "pi-8", extract_job_id: "ext_1" },
+      { id: "ext_1", status: "pending", doc_id: "pi-8" },
+    );
+    expect(await client().extract(pdf, object, { wait: false })).toEqual({
+      id: "ext_1",
+      status: "pending",
+      doc_id: "pi-8",
+    });
+    expect(sent.map((r) => [r.method, r.path])).toEqual([
+      ["GET", "/collections/"],
+      ["POST", "/doc/"],
+      ["GET", "/doc/pi-7/metadata"],
+      ["POST", "/doc/"],
+      ["GET", "/extract/ext_1/"],
+    ]);
+  });
+
   it("stores a file in the collection named", async () => {
     const stored = [{ id: "c-1", name: "Invoices" }];
     const sent = serve(({ path, json }) => {

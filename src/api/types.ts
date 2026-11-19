@@ -16,11 +16,11 @@ export interface SubmitDocumentOptions {
   /**
    * With a PDF and `index: false`: an extract job's configuration, as
    * `createExtract()` takes it. The job starts on the document, its id is the
-   * answer's `extract_job_id`, and the upload is not charged on its own: a
-   * completed job costs its extraction, but not less than the upload. A file
-   * stored already whose pages are still being read starts no job: the
-   * upload rejects with status 409, and the error's `details.detail.doc_id`
-   * names the stored document.
+   * answer's `extract_job_id`. Only the extraction is charged, once the job
+   * completes; a job that does not complete deletes the document. A file
+   * stored already that is still processing starts no job: the upload
+   * rejects with status 409, and the error's `details.detail.doc_id` names
+   * the stored document.
    */
   extract?: ExtractConfiguration;
 }
