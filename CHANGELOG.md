@@ -1,3 +1,11 @@
+## [0.12.1](https://github.com/VectifyAI/pageindex-js-sdk/compare/v0.12.0...v0.12.1) (2026-11-19)
+
+
+### Bug Fixes
+
+* extract(file) uploads the file again when the stored document it waited for is deleted, and its docs say only a completed job is charged ([#7](https://github.com/VectifyAI/pageindex-js-sdk/issues/7)) ([fdfc811](https://github.com/VectifyAI/pageindex-js-sdk/commit/fdfc811b1e5b26e5a29bf8dcfa88e1aaff628ef2))
+* retry requests and name account-limit errors as the Python SDK does ([#8](https://github.com/VectifyAI/pageindex-js-sdk/issues/8)) ([8825b7f](https://github.com/VectifyAI/pageindex-js-sdk/commit/8825b7f77e2c7efc9bdd42cf926500876468d76d))
+
 # [0.12.0](https://github.com/VectifyAI/pageindex-js-sdk/compare/v0.11.0...v0.12.0) (2026-11-19)
 
 
