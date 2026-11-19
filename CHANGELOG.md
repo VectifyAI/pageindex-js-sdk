@@ -1,3 +1,10 @@
+# [0.12.0](https://github.com/VectifyAI/pageindex-js-sdk/compare/v0.11.0...v0.12.0) (2026-11-19)
+
+
+### Features
+
+* PageExtractClient.extract(file) uploads the file with its job, so the upload is not charged on its own ([c6e45bf](https://github.com/VectifyAI/pageindex-js-sdk/commit/c6e45bf54a8ab2b59c34c0b27ea6bee4c570c95c))
+
 # [0.11.0](https://github.com/VectifyAI/pageindex-js-sdk/compare/v0.10.0...v0.11.0) (2026-11-19)
 
 
