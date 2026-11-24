@@ -201,6 +201,24 @@ export class PageIndexApi {
     );
   }
 
+  /** One page, 1-based, as JPEG bytes. */
+  async pageImage(docId: string, page: number): Promise<Uint8Array> {
+    const { images } = await this.request<{
+      images: { page: number; url: string | null }[];
+    }>(`/doc/s3/${encodeURIComponent(docId)}/images?start=${page}&end=${page}`);
+    const url = images.find((image) => image.page === page)?.url;
+    if (!url) {
+      throw new PageIndexError(
+        `No image URL returned for page ${page}.`,
+        "INTERNAL_ERROR",
+      );
+    }
+    // a presigned URL: the API key stays off it
+    const response = await fetchWithRetry(url);
+    if (!response.ok) await this.handleResponse(response);
+    return new Uint8Array(await response.arrayBuffer());
+  }
+
   async createFolder(
     options: CreateFolderOptions,
   ): Promise<CreateFolderResponse> {
