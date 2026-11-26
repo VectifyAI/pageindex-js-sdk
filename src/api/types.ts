@@ -329,7 +329,7 @@ export interface SearchDocumentsResponse {
   seconds: number;
 }
 
-export type ExtractTier = "standard" | "pro";
+export type ExtractTier = "standard" | "pro" | "max";
 
 export interface ExtractConfiguration {
   /** A JSON Schema whose top is an object or an array. */
