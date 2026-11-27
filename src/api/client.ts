@@ -201,6 +201,34 @@ export class PageIndexApi {
     );
   }
 
+  /**
+   * One page, 1-based, as JPEG bytes. A page the document has no image for
+   * (out of range, or not rendered) is refused with `NOT_FOUND`.
+   */
+  async pageImage(
+    docId: string,
+    page: number,
+    signal?: AbortSignal,
+  ): Promise<Uint8Array> {
+    const { images } = await this.request<{
+      images: { page: number; url: string | null }[];
+    }>(
+      `/doc/s3/${encodeURIComponent(docId)}/images?start=${page}&end=${page}`,
+      { signal },
+    );
+    const url = images.find((image) => image.page === page)?.url;
+    if (!url) {
+      throw new PageIndexError(
+        `Document ${docId} has no image for page ${page}.`,
+        "NOT_FOUND",
+      );
+    }
+    // a presigned URL: the API key stays off it
+    const response = await fetchWithRetry(url, { signal });
+    if (!response.ok) await this.handleResponse(response);
+    return new Uint8Array(await response.arrayBuffer());
+  }
+
   async createFolder(
     options: CreateFolderOptions,
   ): Promise<CreateFolderResponse> {

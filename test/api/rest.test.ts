@@ -288,3 +288,43 @@ describe("API key", () => {
     expect(() => new PageIndexClient()).toThrow("No API key");
   });
 });
+
+describe("pageImage", () => {
+  it("downloads the page from its presigned URL, without the API key", async () => {
+    const sent: { url: string; headers?: HeadersInit }[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL, init?: RequestInit) => {
+        sent.push({ url: String(input), headers: init?.headers });
+        if (String(input).startsWith("https://api.test")) {
+          return Response.json({
+            images: [{ page: 3, url: "https://bucket.test/page-3.jpg" }],
+          });
+        }
+        return new Response(new Uint8Array([0xff, 0xd8, 0xff]));
+      }),
+    );
+
+    const image = await api().pageImage("pi-1", 3);
+
+    expect(image).toEqual(new Uint8Array([0xff, 0xd8, 0xff]));
+    expect(sent).toEqual([
+      {
+        url: "https://api.test/doc/s3/pi-1/images?start=3&end=3",
+        headers: { api_key: "k" },
+      },
+      { url: "https://bucket.test/page-3.jpg", headers: undefined },
+    ]);
+  });
+
+  it("refuses a page with no image URL as NOT_FOUND", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json({ images: [{ page: 99, url: null }] })),
+    );
+
+    await expect(api().pageImage("pi-1", 99)).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+  });
+});
