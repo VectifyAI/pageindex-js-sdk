@@ -1,3 +1,17 @@
+# [0.13.0](https://github.com/VectifyAI/pageindex-js-sdk/compare/v0.12.1...v0.13.0) (2026-11-27)
+
+
+### Bug Fixes
+
+* **tools:** say searchPages() returns page numbers without their text ([#11](https://github.com/VectifyAI/pageindex-js-sdk/issues/11)) ([83e9524](https://github.com/VectifyAI/pageindex-js-sdk/commit/83e95243ae2f82e1e4c4d884c41531c74a50a085))
+
+
+### Features
+
+* PageExtractClient.extract() takes tier "max", the most accurate ([#12](https://github.com/VectifyAI/pageindex-js-sdk/issues/12)) ([55cfc36](https://github.com/VectifyAI/pageindex-js-sdk/commit/55cfc3699fcad1dd5e237f526fc7449518f6b5d0))
+* PageIndexApi.pageImage() returns one page as JPEG bytes, as the Python SDK's page_image() does ([#10](https://github.com/VectifyAI/pageindex-js-sdk/issues/10)) ([7eea4af](https://github.com/VectifyAI/pageindex-js-sdk/commit/7eea4af42d1b6c34856889427d62f8c6db63d9ca))
+* PageSearchClient and PageExtractClient give their PageIndexClient as documents, and pageindex stays as a deprecated alias ([#9](https://github.com/VectifyAI/pageindex-js-sdk/issues/9)) ([89a192b](https://github.com/VectifyAI/pageindex-js-sdk/commit/89a192b1c7e6ccb57a5a28239e3ed4b38d09e039))
+
 ## [0.12.1](https://github.com/VectifyAI/pageindex-js-sdk/compare/v0.12.0...v0.12.1) (2026-11-19)
 
 
