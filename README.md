@@ -62,8 +62,8 @@ If you do not pass `apiKey`, the client reads `PAGEINDEX_API_KEY`. If that varia
 | `submitDocument(file, fileName, options?)` | Upload a document                               |
 | `waitDocument(docId, options?)`            | Wait until a document's processing is done      |
 | `getTree(docId, options?)`                 | Get tree structure and processing status        |
-| `buildOutlineIndex(docId)`                 | Build a missing outline index                   |
-| `outline(docId, structure)`                | Get a flat or hierarchical outline              |
+| `buildOutlineIndex(docId, structure?)`     | Build a missing, flat or hierarchical outline   |
+| `getOutline(docId)`                        | Get the page count and outline headings         |
 | `getDocument(docId)`                       | Get document metadata                           |
 | `listDocuments(options?)`                  | List documents (paginated)                      |
 | `deleteDocument(docId)`                    | Delete a document                               |

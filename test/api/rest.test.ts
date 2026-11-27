@@ -219,13 +219,15 @@ describe("collections and outline index", () => {
     await client.createCollection({ name: "Invoices" });
     await client.deleteCollection("c/1");
     await client.buildOutlineIndex("pi-1");
-    await client.outline("pi-1", "hierarchical");
+    await client.buildOutlineIndex("pi-1", "hierarchical");
+    await client.getOutline("pi-1");
     expect(sent.map((r) => [r.method, r.path, r.json])).toEqual([
       ["GET", "/collections/", undefined],
       ["POST", "/collection/", { name: "Invoices" }],
       ["DELETE", "/collection/c%2F1/", undefined],
       ["POST", "/doc/pi-1/index", undefined],
       ["POST", "/doc/pi-1/index", { structure: "hierarchical" }],
+      ["GET", "/doc/pi-1/?type=outline", undefined],
     ]);
   });
 });

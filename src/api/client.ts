@@ -16,6 +16,7 @@ import type {
   DeleteExtractResponse,
   ExtractJob,
   GetDocumentMetadataResponse,
+  GetOutlineResponse,
   GetTreeOptions,
   GetTreeResponse,
   ListCollectionsResponse,
@@ -25,7 +26,6 @@ import type {
   ListExtractsResponse,
   ListFoldersOptions,
   ListFoldersResponse,
-  OutlineResponse,
   SearchDocumentsOptions,
   SearchDocumentsResponse,
   SearchPagesOptions,
@@ -144,32 +144,27 @@ export class PageIndexApi {
 
   /**
    * Starts building the outline index of a document stored without one
-   * (`index: false`). Charged as an upload that builds its index. Read
-   * `getTree()`'s `index_status` to see when it is built.
+   * (`index: false`), charged as an upload that builds its index. With
+   * `structure`, starts building that outline unless the document has it:
+   * `"flat"` lists the headings at one level, at $1 per 1,000 pages;
+   * `"hierarchical"` nests them, each with its `level`, at $2, or $1 for a
+   * document with a flat outline. A hierarchical outline serves as the flat
+   * one. Once `getOutline()`'s `index_status` is `"completed"`, its `result`
+   * is the outline.
    */
-  async buildOutlineIndex(docId: string): Promise<BuildOutlineIndexResponse> {
-    return this.request<BuildOutlineIndexResponse>(
-      `/doc/${encodeURIComponent(docId)}/index`,
-      { method: "POST" },
-    );
+  async buildOutlineIndex(
+    docId: string,
+    structure?: "flat" | "hierarchical",
+  ): Promise<BuildOutlineIndexResponse> {
+    const path = `/doc/${encodeURIComponent(docId)}/index`;
+    return structure
+      ? this.requestJson<BuildOutlineIndexResponse>("POST", path, { structure })
+      : this.request<BuildOutlineIndexResponse>(path, { method: "POST" });
   }
 
-  /**
-   * Returns the document's outline when it has it, free, and starts building
-   * it otherwise. `"flat"` lists the headings at one level, at $1 per 1,000
-   * pages; `"hierarchical"` nests them, each with its `level`, at $2, or $1
-   * for a document with a flat outline. A hierarchical outline serves as the
-   * flat one. Once `getTree()`'s `index_status` is `"completed"`, ask again
-   * for the outline.
-   */
-  async outline(
-    docId: string,
-    structure: "flat" | "hierarchical",
-  ): Promise<OutlineResponse> {
-    return this.requestJson<OutlineResponse>(
-      "POST",
-      `/doc/${encodeURIComponent(docId)}/index`,
-      { structure },
+  async getOutline(docId: string): Promise<GetOutlineResponse> {
+    return this.request<GetOutlineResponse>(
+      `/doc/${encodeURIComponent(docId)}/?type=outline`,
     );
   }
 

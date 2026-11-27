@@ -109,6 +109,8 @@ export interface GetTreeResponse {
 export interface BuildOutlineIndexResponse {
   doc_id: string;
   index_status: "queued" | "processing" | "completed";
+  /** What this request costs, in credits, charged once the outline is built. */
+  usage?: { credits: number };
 }
 
 /** A heading of an outline, in reading order. `level` is 1 for a top heading; a flat outline has none. */
@@ -118,13 +120,13 @@ export interface OutlineHeading {
   page: number;
 }
 
-export interface OutlineResponse extends BuildOutlineIndexResponse {
-  /** What this request costs, in credits, charged once the outline is built. */
-  usage?: { credits: number };
-  /** The document's page count, once `index_status` is `"completed"`. */
-  pages?: number;
-  /** The headings, once `index_status` is `"completed"`. */
-  outline?: OutlineHeading[];
+export interface GetOutlineResponse {
+  doc_id: string;
+  status: string;
+  retrieval_ready?: boolean;
+  index_status?: string;
+  /** The document's page count and its headings; `null` before it has an outline. */
+  result?: { pages: number; outline: OutlineHeading[] } | null;
 }
 
 export interface ChatCompletionsParams {
