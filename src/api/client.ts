@@ -2,6 +2,7 @@ import { PageIndexError, type PageIndexErrorCode } from "../errors.js";
 import { sleep } from "../internal.js";
 import { fetchWithRetry } from "../retry.js";
 import type {
+  BuildOutlineIndexOptions,
   BuildOutlineIndexResponse,
   ChatCompletionChunk,
   ChatCompletionsParams,
@@ -142,14 +143,19 @@ export class PageIndexApi {
   }
 
   /**
-   * Starts building the outline index of a document stored without one
-   * (`index: false`). Charged as an upload that builds its index. Read
+   * Starts building the document's outline index, as `options.outlineMode`
+   * says; a document stored without one (`index: false`) gets a sequential
+   * outline by default. Charged as an upload that builds its index. Read
    * `getTree()`'s `index_status` to see when it is built.
    */
-  async buildOutlineIndex(docId: string): Promise<BuildOutlineIndexResponse> {
-    return this.request<BuildOutlineIndexResponse>(
+  async buildOutlineIndex(
+    docId: string,
+    options?: BuildOutlineIndexOptions,
+  ): Promise<BuildOutlineIndexResponse> {
+    return this.requestJson<BuildOutlineIndexResponse>(
+      "POST",
       `/doc/${encodeURIComponent(docId)}/index`,
-      { method: "POST" },
+      { outline_mode: options?.outlineMode },
     );
   }
 

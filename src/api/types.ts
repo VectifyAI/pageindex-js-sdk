@@ -106,6 +106,17 @@ export interface GetTreeResponse {
   result?: TreeNode[];
 }
 
+export interface BuildOutlineIndexOptions {
+  /**
+   * `"sequential"` nests the headings by level; `"parallel"` puts every
+   * heading at one level. The document gets an outline of that mode, and
+   * keeps the one it has if it is of that mode already. Without it, a
+   * document that has its index keeps it, and one that has none gets a
+   * sequential outline.
+   */
+  outlineMode?: "parallel" | "sequential";
+}
+
 export interface BuildOutlineIndexResponse {
   doc_id: string;
   index_status: "queued" | "processing" | "completed";

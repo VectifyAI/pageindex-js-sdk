@@ -212,18 +212,20 @@ describe("extract jobs", () => {
 });
 
 describe("collections and outline index", () => {
-  it("lists, creates and deletes collections, and builds an index", async () => {
+  it("lists, creates and deletes collections, and builds an index of the outline mode asked for", async () => {
     const sent = serve(() => ({}));
     const client = api();
     await client.listCollections();
     await client.createCollection({ name: "Invoices" });
     await client.deleteCollection("c/1");
     await client.buildOutlineIndex("pi-1");
+    await client.buildOutlineIndex("pi-1", { outlineMode: "sequential" });
     expect(sent.map((r) => [r.method, r.path, r.json])).toEqual([
       ["GET", "/collections/", undefined],
       ["POST", "/collection/", { name: "Invoices" }],
       ["DELETE", "/collection/c%2F1/", undefined],
-      ["POST", "/doc/pi-1/index", undefined],
+      ["POST", "/doc/pi-1/index", {}],
+      ["POST", "/doc/pi-1/index", { outline_mode: "sequential" }],
     ]);
   });
 });
