@@ -1,6 +1,6 @@
 # @pageindex/sdk
 
-TypeScript SDK for [PageIndex](https://pageindex.ai). Upload documents, retrieve tree structures, and chat with your PDFs. Find the pages that answer a question (Page Search), and extract JSON from a PDF (Page Extract).
+TypeScript SDK for [PageIndex](https://pageindex.ai). Upload documents, retrieve tree structures, and chat with your PDFs. Find the pages that answer a question (Page Search), extract JSON from a PDF (Page Extract), and name what a PDF or each of its pages is (Page Classify).
 
 Get your API Key at [developer.pageindex.ai](https://developer.pageindex.ai/api-keys). Full docs at [pageindex.ai/docs](https://pageindex.ai/docs).
 
@@ -78,6 +78,8 @@ If you do not pass `apiKey`, the client reads `PAGEINDEX_API_KEY`. If that varia
 | `listExtracts(options?)`                   | List extract jobs                               |
 | `cancelExtract(jobId)`                     | Cancel an extract job                           |
 | `deleteExtract(jobId)`                     | Delete an extract job                           |
+| `createClassify(options)`                  | Start a classify job on a document or a file    |
+| `getClassify(jobId)`                       | Get a classify job and its result               |
 | `chatCompletions(params)`                  | Chat with documents (streaming & non-streaming) |
 
 `submitDocument` takes `{ index: false }` to store the pages and build no outline index. Such an upload costs less. `buildOutlineIndex()` builds the index later. With `index: false`, `extract` starts an extract job on the uploaded PDF, and the upload is not charged on its own.
@@ -153,6 +155,37 @@ A file is uploaded with its job, and only the extraction is charged, once the jo
 A job can take a minute or more. `extract()` waits up to `timeout`, which is one hour by default. If a job fails, is cancelled, or does not end within `timeout`, `extract()` rejects with a `PageIndexError` whose `details.job` holds the job. A job that does not end in time continues in the cloud: read it later with `getExtract(jobId)`.
 
 With `citeSources`, `extract_metadata.field_metadata` gives the page of each list item by its JSON Pointer, e.g. `{ "/items/0": { page: 3 } }`. A schema without lists gets no entries.
+
+## Page Classify (`PageClassifyClient`)
+
+`PageClassifyClient` gives the class of a PDF, or of each of its pages, among the classes you name. It has the same methods as the Python SDK's `PageClassifyClient`.
+
+```typescript
+import { PageClassifyClient } from '@pageindex/sdk';
+
+const classify = new PageClassifyClient(); // Reads PAGEINDEX_API_KEY
+
+const classes = {
+  invoice: 'A bill asking for payment',
+  receipt: 'Proof of a purchase already paid',
+  bank_statement: "A bank's statement of an account's transactions",
+  utility_bill: null, // the name alone is clear enough
+};
+
+// One class for the document: it is uploaded to the "Page Classify" collection with the job
+const job = await classify.classify({ path: './scan.pdf' }, classes);
+console.log(job.class, job.confidence); // invoice 0.96
+
+// A class for each page of an uploaded document
+const pages = await classify.classify('doc-id', classes, { granularity: 'page' });
+for (const p of pages.pages ?? []) console.log(p.page, p.class, p.confidence);
+```
+
+A string is a `doc_id`. To upload a file, pass bytes, a `Blob`, or `{ path }`. Classes are `{ name: description }` or a list of names. A document or page that is none of them gets the class `null`.
+
+A document is classified on its first 5 pages, and `"page"` reads every page, unless `pages` names others, such as `pages: [2, 6]`. Classifying costs $0.001 a page read, charged once the job completes; a file uploaded with the job is free, and kept as a document from then on. A job that fails is not charged, and leaves the file as a failed document until you delete it.
+
+`classify()` waits up to `timeout`, 30 minutes by default; a job usually takes seconds. If it fails or does not end in time, `classify()` rejects with a `PageIndexError` whose `details.job` holds the job. With `wait: false` it resolves with the job pending: `waitClassify(jobId)` or `getClassify(jobId)` reads it later.
 
 ## Chat API
 
@@ -283,7 +316,7 @@ See [docs/migrating-from-pageindex-search.md](./docs/migrating-from-pageindex-se
 
 ## Links
 
-- [Docs](https://pageindex.ai/docs) · [Page Search](https://pageindex.ai/docs/search/quick-start) · [Page Extract](https://pageindex.ai/docs/extract/quick-start) · [MCP](https://pageindex.ai/docs/api-reference/chat) · [REST API](https://pageindex.ai/docs/api-reference) · [Python SDK](https://github.com/VectifyAI/PageIndex)
+- [Docs](https://pageindex.ai/docs) · [Page Search](https://pageindex.ai/docs/search/quick-start) · [Page Extract](https://pageindex.ai/docs/extract/quick-start) · [Page Classify](https://pageindex.ai/docs/classify/quick-start) · [MCP](https://pageindex.ai/docs/api-reference/chat) · [REST API](https://pageindex.ai/docs/api-reference) · [Python SDK](https://github.com/VectifyAI/PageIndex)
 - [Discord](https://discord.gg/VuXuf29EUj) · [GitHub](https://github.com/VectifyAI/pageindex-js-sdk)
 
 ## License

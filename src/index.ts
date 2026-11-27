@@ -20,5 +20,14 @@ export type {
   PageExtractOptions,
   WaitExtractOptions,
 } from "./page-extract.js";
+export {
+  PAGE_CLASSIFY_COLLECTION,
+  PageClassifyClient,
+} from "./page-classify.js";
+export type {
+  ClassifyClasses,
+  PageClassifyOptions,
+  WaitClassifyOptions,
+} from "./page-classify.js";
 export type { ProductClientConfig } from "./product-client.js";
 export type { FileInput } from "./internal.js";
