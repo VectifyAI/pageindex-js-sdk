@@ -396,3 +396,71 @@ export interface DeleteExtractResponse {
   id: string;
   deleted: true;
 }
+
+export interface ClassifyClass {
+  name: string;
+  /** What the class is, where its name alone may not be enough. */
+  description?: string;
+}
+
+/**
+ * `"document"`: one class for the document. `"page"`: a class for each page.
+ */
+export type ClassifyGranularity = "document" | "page";
+
+export interface ClassifyConfiguration {
+  /** 1 to 50; names and descriptions hold 8,000 characters, all told. */
+  classes: ClassifyClass[];
+  granularity?: ClassifyGranularity;
+  /**
+   * E.g. `"3-9"`. By default, `"document"` reads the first 5 pages and
+   * `"page"` every page; a job's configuration names the pages it read.
+   */
+  target_pages?: string;
+}
+
+export type ClassifyJobStatus = "pending" | "running" | "completed" | "failed";
+
+export interface ClassifiedPage {
+  page: number;
+  /** `null`: none of the classes. */
+  class: string | null;
+  /** How sure the class is, 0 to 1. */
+  confidence: number;
+}
+
+export interface ClassifyJob {
+  id: string;
+  status: ClassifyJobStatus;
+  doc_id: string;
+  configuration: ClassifyConfiguration;
+  created_at: string;
+  updated_at: string;
+  /** Present once completed, for `"document"`; `null`: none of the classes. */
+  class?: string | null;
+  /** Present once completed, for `"document"`: how sure the class is, 0 to 1. */
+  confidence?: number;
+  /** Present once completed, for `"page"`. */
+  pages?: ClassifiedPage[];
+  /** Present once completed: pages that could not be read, and were not charged. */
+  failed_pages?: number[];
+  /** Present once completed. */
+  usage?: { pages: number; credits: number };
+  /** Present once failed. */
+  error_message?: string;
+  /** Present once completed or failed. */
+  finished_at?: string;
+}
+
+export interface CreateClassifyOptions {
+  configuration: ClassifyConfiguration;
+  /** An uploaded document whose pages are ready; or a `file` to upload. */
+  docId?: string;
+  /** A PDF, kept as a document of yours with the job. */
+  file?: Blob;
+  fileName?: string;
+  /** Where a file is kept. */
+  collectionId?: string;
+  folderId?: string;
+  signal?: AbortSignal;
+}

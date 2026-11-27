@@ -6,6 +6,8 @@ import type {
   ChatCompletionChunk,
   ChatCompletionsParams,
   ChatCompletionsResponse,
+  ClassifyJob,
+  CreateClassifyOptions,
   CreateCollectionOptions,
   CreateCollectionResponse,
   CreateExtractOptions,
@@ -386,6 +388,45 @@ export class PageIndexApi {
     return this.request<DeleteExtractResponse>(
       `/extract/${encodeURIComponent(jobId)}/`,
       { method: "DELETE" },
+    );
+  }
+
+  /**
+   * Starts a classify job on an uploaded document (`docId`), or on a PDF sent
+   * with it (`file`), which is kept as a document. A document still
+   * processing is refused with HTTP 409; for a file stored already, the 409's
+   * `details.detail.doc_id` names its document.
+   */
+  async createClassify(options: CreateClassifyOptions): Promise<ClassifyJob> {
+    const formData = new FormData();
+    formData.append("configuration", JSON.stringify(options.configuration));
+    if (options.docId !== undefined) {
+      formData.append("doc_id", options.docId);
+    }
+    if (options.file !== undefined) {
+      formData.append("file", options.file, options.fileName ?? "document.pdf");
+      const folderId =
+        options.folderId ??
+        (options.collectionId === undefined ? this.folderScope : undefined);
+      if (folderId) {
+        formData.append("folder_id", folderId);
+      }
+      if (options.collectionId !== undefined) {
+        formData.append("collection_id", options.collectionId);
+      }
+    }
+    return this.request<ClassifyJob>("/classify/", {
+      method: "POST",
+      body: formData,
+      signal: options.signal,
+    });
+  }
+
+  /** A classify job, with its result once it is completed. */
+  async getClassify(jobId: string, signal?: AbortSignal): Promise<ClassifyJob> {
+    return this.request<ClassifyJob>(
+      `/classify/${encodeURIComponent(jobId)}/`,
+      { signal },
     );
   }
 

@@ -1,3 +1,4 @@
+import type { PageIndexApi } from "./api/client.js";
 import type {
   DeleteExtractResponse,
   ExtractConfiguration,
@@ -255,7 +256,11 @@ export class PageExtractClient {
   ): Promise<SubmitDocumentResponse> {
     const upload = async () =>
       this.documents.api.submitDocument(file.blob, file.fileName, {
-        collectionId: await this.collectionId(collection),
+        collectionId: await collectionIdOf(
+          this.documents.api,
+          this.collections,
+          collection,
+        ),
         index: false,
         extract: configuration,
       });
@@ -335,44 +340,48 @@ export class PageExtractClient {
     }
     return current;
   }
+}
 
-  /** The ID of the collection named or identified, found or made. */
-  private async collectionId(
-    collection: string | null,
-  ): Promise<string | undefined> {
-    if (collection === null) return undefined;
-    const cached = this.collections.get(collection);
-    if (cached !== undefined) return cached;
-    const api = this.documents.api;
-    const name = collection.trim().toLowerCase();
-    const stored = async () =>
-      (await api.listCollections()).collections.find(
-        (c) => c.id === collection || c.name.toLowerCase() === name,
-      )?.id;
+/**
+ * The ID of the collection named or identified, found or made; `collections`
+ * keeps the IDs found, by the name or ID they were asked for. Page Classify
+ * keeps its files the same way.
+ */
+export async function collectionIdOf(
+  api: PageIndexApi,
+  collections: Map<string, string>,
+  collection: string | null,
+): Promise<string | undefined> {
+  if (collection === null) return undefined;
+  const cached = collections.get(collection);
+  if (cached !== undefined) return cached;
+  const name = collection.trim().toLowerCase();
+  const stored = async () =>
+    (await api.listCollections()).collections.find(
+      (c) => c.id === collection || c.name.toLowerCase() === name,
+    )?.id;
 
-    let found = await stored();
-    if (found === undefined) {
-      try {
-        found = (await api.createCollection({ name: collection })).collection
-          .id;
-      } catch (error) {
-        if (!(error instanceof PageIndexError && error.statusCode === 409)) {
-          throw error;
-        }
-        found = await stored();
-        if (found === undefined) {
-          throw new PageIndexError(
-            `A collection named like '${collection}' exists, but not by that spelling: pass its exact name or ID.`,
-            "INVALID_INPUT",
-            undefined,
-            409,
-          );
-        }
+  let found = await stored();
+  if (found === undefined) {
+    try {
+      found = (await api.createCollection({ name: collection })).collection.id;
+    } catch (error) {
+      if (!(error instanceof PageIndexError && error.statusCode === 409)) {
+        throw error;
+      }
+      found = await stored();
+      if (found === undefined) {
+        throw new PageIndexError(
+          `A collection named like '${collection}' exists, but not by that spelling: pass its exact name or ID.`,
+          "INVALID_INPUT",
+          undefined,
+          409,
+        );
       }
     }
-    this.collections.set(collection, found);
-    return found;
   }
+  collections.set(collection, found);
+  return found;
 }
 
 function configurationOf(
@@ -403,7 +412,7 @@ function configurationOf(
  * The stored document a 409 upload names: the same file, uploaded already,
  * still processing.
  */
-function storedDocumentOf(error: unknown): string | undefined {
+export function storedDocumentOf(error: unknown): string | undefined {
   if (!(error instanceof PageIndexError) || error.statusCode !== 409) {
     return undefined;
   }

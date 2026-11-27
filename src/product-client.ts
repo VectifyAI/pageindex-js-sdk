@@ -3,8 +3,8 @@ import { type ApiKeyEnv, resolveApiKey } from "./env.js";
 import { PageIndexError } from "./errors.js";
 
 /**
- * How a Page Search or Page Extract client reaches PageIndex: with an API key,
- * or through a `PageIndexClient` you already have.
+ * How a Page Search, Page Extract or Page Classify client reaches PageIndex:
+ * with an API key, or through a `PageIndexClient` you already have.
  */
 export type ProductClientConfig =
   | {
@@ -21,7 +21,7 @@ export type ProductClientConfig =
 export function productClient(
   config: ProductClientConfig,
   name: string,
-  own: ApiKeyEnv,
+  own?: ApiKeyEnv,
 ): PageIndexClient {
   if (config.client === undefined) {
     return new PageIndexClient({
