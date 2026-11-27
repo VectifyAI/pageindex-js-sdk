@@ -22,7 +22,10 @@ const POLL_INTERVAL = 3000;
 export type JsonSchema = Record<string, unknown>;
 
 export interface PageExtractOptions {
-  /** Default: `"standard"`. */
+  /**
+   * `"standard"` (default), `"pro"` or `"max"`: each is more accurate, and
+   * costs more a page, than the one before it. Prices: pageindex.ai/docs.
+   */
   tier?: ExtractTier;
   /**
    * Extract from these pages only: `"3-9"`, `[3, 9]` or `3`. The extraction is
