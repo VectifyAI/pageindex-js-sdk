@@ -185,7 +185,7 @@ A string is a `doc_id`. To upload a file, pass bytes, a `Blob`, or `{ path }`. C
 
 A document is classified on its first 5 pages, and `"page"` reads every page, unless `pages` names others, such as `pages: [2, 6]`. Classifying costs $0.001 a page read, charged once the job completes; a file uploaded with the job is free, and kept as a document from then on. A job that fails is not charged, and leaves the file as a failed document until you delete it.
 
-`classify()` waits up to `timeout`, 30 minutes by default; a job usually takes seconds. If it fails or does not end in time, `classify()` rejects with a `PageIndexError` whose `details.job` holds the job. With `wait: false` it resolves with the job pending: `waitClassify(jobId)` or `getClassify(jobId)` reads it later.
+`classify()` waits up to `timeout`, 30 minutes by default; a job usually takes seconds. If it fails, could not read some of its pages (listed in the job's `failed_pages` and left out of its result), or does not end in time, `classify()` rejects with a `PageIndexError` whose `details.job` holds the job. With `wait: false` it resolves with the job pending: `waitClassify(jobId)` or `getClassify(jobId)` reads it later.
 
 ## Chat API
 

@@ -152,6 +152,40 @@ describe("PageClassifyClient.classify", () => {
     expect(error.details).toEqual({ job: failed });
   });
 
+  it("takes one name as one class", async () => {
+    const sent = replies({ id: "cls_5", status: "pending", doc_id: "pi-1" });
+
+    await client().classify("pi-1", "invoice", { wait: false });
+    expect(JSON.parse(sent[0]?.form?.configuration ?? "").classes).toEqual([
+      { name: "invoice" },
+    ]);
+  });
+
+  it("rejects with the job when it could not read some pages", async () => {
+    const partial = {
+      id: "cls_6",
+      status: "completed",
+      doc_id: "pi-1",
+      class: "invoice",
+      confidence: 0.95,
+      failed_pages: [1, 2],
+    };
+    replies({ id: "cls_6", status: "pending", doc_id: "pi-1" }, partial);
+
+    const error = await client()
+      .classify("pi-1", ["invoice", "receipt"])
+      .catch((e) => e);
+    expect(error).toBeInstanceOf(PageIndexError);
+    expect(error.message).toBe(
+      "Classify job cls_6 has pages it could not read: 1, 2. Its result leaves them out: read it with getClassify(jobId).",
+    );
+    expect(error.details).toEqual({ job: partial });
+
+    // getClassify() returns it as it is.
+    replies(partial);
+    expect(await client().getClassify("cls_6")).toEqual(partial);
+  });
+
   it("refuses a file name given as a doc_id", async () => {
     const sent = replies();
     const error = await client()

@@ -18,9 +18,10 @@ const POLL_INTERVAL = 1000;
 
 /**
  * The classes, by name: `{ name: description }` (a description may be
- * `null`), or a list of names, or of `{ name, description }`.
+ * `null`), a list of names or of `{ name, description }`, or one name.
  */
 export type ClassifyClasses =
+  | string
   | Record<string, string | null | undefined>
   | Array<string | ClassifyClass>;
 
@@ -35,9 +36,9 @@ export interface PageClassifyOptions {
   pages?: string | number | [first: number, last: number];
   /**
    * Resolve with the job once it is completed (default), up to `timeout`.
-   * Rejects if it failed, or is not done in time; it goes on running, so read
-   * it with `getClassify()`. `false` resolves with the job pending once it
-   * starts.
+   * Rejects if it failed, could not read some of its pages, or is not done in
+   * time (it goes on running); read such a job with `getClassify()`. `false`
+   * resolves with the job pending once it starts.
    */
   wait?: boolean;
   /**
@@ -100,8 +101,8 @@ export class PageClassifyClient {
    *   not charged, and leaves a file it uploaded as a failed document, with its
    *   name and file but no pages, until you delete it. Uploading the same file
    *   again uses the stored document.
-   * @param classes 1 to 50 classes: `{ name: description }`, or a list of
-   *   names. Names and descriptions hold 8,000 characters, all told.
+   * @param classes 1 to 50 classes: `{ name: description }`, a list of names,
+   *   or one name. Names and descriptions hold 8,000 characters, all told.
    * @returns The job. Once completed it has `class` and `confidence`
    *   (`"document"`), or `pages` (`"page"`); a class is `null` for a document
    *   or page of none of the classes.
@@ -191,8 +192,8 @@ export class PageClassifyClient {
 
   /**
    * Waits for a classify job, and resolves with it once it is completed.
-   * Rejects if it failed, or is not done within `timeout` (it goes on
-   * running).
+   * Rejects if it failed, could not read some of its pages, or is not done
+   * within `timeout` (it goes on running).
    */
   async waitClassify(
     jobId: string,
@@ -284,6 +285,14 @@ export class PageClassifyClient {
         { job: current },
       );
     }
+    // Completed with pages it could not read: its class, or its pages, leave them out.
+    if (current.failed_pages?.length) {
+      throw new PageIndexError(
+        `Classify job ${current.id} has pages it could not read: ${current.failed_pages.join(", ")}. Its result leaves them out: read it with getClassify(jobId).`,
+        undefined,
+        { job: current },
+      );
+    }
     return current;
   }
 }
@@ -292,9 +301,11 @@ function configurationOf(
   classes: ClassifyClasses,
   options: PageClassifyOptions,
 ): ClassifyConfiguration {
-  const named = Array.isArray(classes)
-    ? classes.map((c) => (typeof c === "string" ? { name: c } : c))
-    : Object.entries(classes).map(([name, description]) =>
+  // One name is one class: a string is not spread into its letters.
+  const listed = typeof classes === "string" ? [classes] : classes;
+  const named = Array.isArray(listed)
+    ? listed.map((c) => (typeof c === "string" ? { name: c } : c))
+    : Object.entries(listed).map(([name, description]) =>
         description ? { name, description } : { name },
       );
   const configuration: ClassifyConfiguration = {
