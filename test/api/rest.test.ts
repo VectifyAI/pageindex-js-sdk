@@ -316,4 +316,15 @@ describe("pageImage", () => {
       { url: "https://bucket.test/page-3.jpg", headers: undefined },
     ]);
   });
+
+  it("refuses a page with no image URL as NOT_FOUND", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => Response.json({ images: [{ page: 99, url: null }] })),
+    );
+
+    await expect(api().pageImage("pi-1", 99)).rejects.toMatchObject({
+      code: "NOT_FOUND",
+    });
+  });
 });

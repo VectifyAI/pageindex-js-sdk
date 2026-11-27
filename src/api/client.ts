@@ -201,20 +201,30 @@ export class PageIndexApi {
     );
   }
 
-  /** One page, 1-based, as JPEG bytes. */
-  async pageImage(docId: string, page: number): Promise<Uint8Array> {
+  /**
+   * One page, 1-based, as JPEG bytes. A page the document has no image for
+   * (out of range, or not rendered) is refused with `NOT_FOUND`.
+   */
+  async pageImage(
+    docId: string,
+    page: number,
+    signal?: AbortSignal,
+  ): Promise<Uint8Array> {
     const { images } = await this.request<{
       images: { page: number; url: string | null }[];
-    }>(`/doc/s3/${encodeURIComponent(docId)}/images?start=${page}&end=${page}`);
+    }>(
+      `/doc/s3/${encodeURIComponent(docId)}/images?start=${page}&end=${page}`,
+      { signal },
+    );
     const url = images.find((image) => image.page === page)?.url;
     if (!url) {
       throw new PageIndexError(
-        `No image URL returned for page ${page}.`,
-        "INTERNAL_ERROR",
+        `Document ${docId} has no image for page ${page}.`,
+        "NOT_FOUND",
       );
     }
     // a presigned URL: the API key stays off it
-    const response = await fetchWithRetry(url);
+    const response = await fetchWithRetry(url, { signal });
     if (!response.ok) await this.handleResponse(response);
     return new Uint8Array(await response.arrayBuffer());
   }
