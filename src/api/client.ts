@@ -150,7 +150,8 @@ export class PageIndexApi {
    * `"hierarchical"` nests them, each with its `level`, at $2, or $1 for a
    * document with a flat outline. A hierarchical outline serves as the flat
    * one. Once `getOutline()`'s `index_status` is `"completed"`, its `result`
-   * is the outline.
+   * is the outline, and its `structure` tells whether it is the one asked for:
+   * a build that fails keeps the outline the document had.
    */
   async buildOutlineIndex(
     docId: string,

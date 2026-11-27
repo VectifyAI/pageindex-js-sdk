@@ -127,6 +127,8 @@ export interface GetOutlineResponse {
   index_status?: string;
   /** The document's page count and its headings; `null` before it has an outline. */
   result?: { pages: number; outline: OutlineHeading[] } | null;
+  /** Which outline `result` is; `null` for a Flash or v1 tree. After a failed build, the document keeps the outline it had. */
+  structure?: "flat" | "hierarchical" | null;
 }
 
 export interface ChatCompletionsParams {
