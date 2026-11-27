@@ -3,9 +3,11 @@ import { type DocumentAddress, documentAddressArgs } from "./address.js";
 import type { NextSteps } from "./types.js";
 
 /**
- * Finds the pages of one document that answer the questions, with their
- * text. Priced by the pages it reads. Documents without page records are
- * refused with `INVALID_INPUT`; read those with `getPageContent()`.
+ * Finds the pages of one document that answer the questions: their page
+ * numbers and relevance, not their text. Read the pages it finds with
+ * `viewPages()` or `getPageContent()`. Priced by the pages it reads.
+ * Documents without page records are refused with `INVALID_INPUT`; read
+ * those with `getPageContent()`.
  */
 export type SearchPagesParams = DocumentAddress & {
   /** 1–10 questions, each up to 2,000 characters. */
@@ -21,10 +23,14 @@ export interface FoundPage {
   /** How likely the page is to answer the question, 0–1. */
   relevance: number;
   /**
-   * `"image"` pages are pictures (scans, charts): their `text` may be
+   * `"image"` pages are pictures (scans, charts): their text may be
    * incomplete, so look at them with `viewPages()`.
    */
   read: "text" | "image";
+  /**
+   * @deprecated The server no longer returns the pages' text. Read a page
+   * with `viewPages()` or `getPageContent()`.
+   */
   text?: string;
   /** Set on `"image"` pages: says their text may be incomplete. */
   note?: string;
@@ -39,7 +45,10 @@ export interface SearchPagesResult {
     pages: FoundPage[];
     more_pages?: FoundPage[];
   }>;
-  /** Pages found whose text did not fit in the response. */
+  /**
+   * @deprecated The server no longer returns the pages' text, so no page
+   * is left out of it.
+   */
   text_left_out?: number[];
   failed_pages?: number[];
   next_steps: NextSteps;
