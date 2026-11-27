@@ -158,30 +158,35 @@ export interface PageSearchDocumentsOptions {
  *
  * `upload()` stores a document's pages and builds no outline index. The
  * documents are the ones `PageIndexClient` and `PageExtractClient` see with
- * the same key; `client.pageindex` is that `PageIndexClient`.
+ * the same key; `client.documents` is that `PageIndexClient`.
  */
 export class PageSearchClient {
-  readonly pageindex: PageIndexClient;
+  readonly documents: PageIndexClient;
 
   constructor(config: ProductClientConfig = {}) {
-    this.pageindex = productClient(
+    this.documents = productClient(
       config,
       "PageSearchClient",
       "PAGEINDEX_SEARCH_API_KEY",
     );
   }
 
+  /** @deprecated Use `documents`. */
+  get pageindex(): PageIndexClient {
+    return this.documents;
+  }
+
   /**
    * Uploads a PDF to search. Its pages are stored and no outline index is
    * built, so the upload is charged less than one that builds it;
-   * `client.pageindex.api.buildOutlineIndex()` builds one later. Uploading the
+   * `client.documents.api.buildOutlineIndex()` builds one later. Uploading the
    * same file to the same place again returns the stored document.
    */
   async upload(
     file: FileInput,
     options: PageSearchUploadOptions = {},
   ): Promise<SubmitDocumentResponse> {
-    const api = this.pageindex.api;
+    const api = this.documents.api;
     const { blob, fileName } = await readFileInput(file, options.fileName);
     const result = await api.submitDocument(blob, fileName, {
       collectionId: options.collection,
@@ -265,7 +270,7 @@ export class PageSearchClient {
     questions: string | string[],
     options: PageSearchDocumentsOptions = {},
   ): Promise<SearchDocumentsResponse> {
-    return this.pageindex.api.searchDocuments({
+    return this.documents.api.searchDocuments({
       questions: typeof questions === "string" ? [questions] : [...questions],
       documentIds: options.documentIds,
       collectionId: options.collection,
@@ -281,7 +286,7 @@ export class PageSearchClient {
     questions: string[],
     options: SearchOneDocumentOptions,
   ): Promise<PageSearchResult> {
-    const api = this.pageindex.api;
+    const api = this.documents.api;
     const info = await api.getDocument(options.document, options.signal);
     const entry = {
       id: info.id,
@@ -324,7 +329,7 @@ export class PageSearchClient {
     options: SearchAcrossDocumentsOptions,
     most: number,
   ): Promise<PageSearchResult> {
-    const api = this.pageindex.api;
+    const api = this.documents.api;
     const started = Date.now();
     const judged = await api.searchDocuments({
       questions,

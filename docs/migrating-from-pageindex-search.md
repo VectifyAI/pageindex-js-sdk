@@ -36,7 +36,7 @@ Page Search is now part of PageIndex. `@pageindex/sdk` gives it as `PageSearchCl
 
 ## Methods
 
-In the new column, `client` is a `PageSearchClient`, and `client.pageindex` is its `PageIndexClient`.
+In the new column, `client` is a `PageSearchClient`, and `client.documents` is its `PageIndexClient`.
 
 | `@pageindex/search` | `@pageindex/sdk` | Notes |
 | --- | --- | --- |
@@ -44,18 +44,18 @@ In the new column, `client` is a `PageSearchClient`, and `client.pageindex` is i
 | `client.search(questions, { document })` | `client.search(questions, { document })` | `document` is an ID. A `Document` object is not accepted. |
 | `client.search(questions, { documentIds, collection, filter, maxDocuments, documentTopK })` | `client.search(questions, { documents, collection, filter, maxDocuments, documentTopK })` | `documentIds` is `documents`. `folder` and `recursive` are new. |
 | `client.documents.search(questions, options)` | `client.searchDocuments(questions, options)` | |
-| `client.documents.get(id)` | `client.pageindex.api.getDocument(id)` | |
-| `client.documents.wait(id)` | `client.pageindex.api.waitDocument(id)` | |
-| `client.documents.list(options)` | `client.pageindex.api.listDocuments({ limit, offset })` | Pages by `offset`. A list is not an async iterator. For one collection, use `client.pageindex.tools.browseDocuments({ collection })` with the collection's name. |
-| `client.documents.delete(id)` | `client.pageindex.api.deleteDocument(id)` | |
-| `client.documents.pages(id, pages)` | `client.pageindex.tools.getPageContent(...)` | An MCP tool. It addresses a document by its path, or by its collection and name. |
-| `client.documents.pageImage(id, page)` | `client.pageindex.tools.viewPages(...)`, `zoomPage(...)` | MCP tools. They return pictures of pages. |
-| `client.documents.outline(id)` | `client.pageindex.api.getTree(id)` | The tree has a different shape. |
-| `client.documents.makeOutline(id)` | `client.pageindex.api.buildOutlineIndex(id)` | |
-| `client.collections.create(name)` | `client.pageindex.api.createCollection({ name })` | |
-| `client.collections.list()` | `client.pageindex.api.listCollections()` | Returns all collections at once. |
-| `client.collections.delete(collection)` | `client.pageindex.api.deleteCollection(id)` | Deletes the documents in the collection too. |
-| `client.tools(options)` | `client.pageindex.tools` | MCP tools, not tool definitions for your model. |
+| `client.documents.get(id)` | `client.documents.api.getDocument(id)` | |
+| `client.documents.wait(id)` | `client.documents.api.waitDocument(id)` | |
+| `client.documents.list(options)` | `client.documents.api.listDocuments({ limit, offset })` | Pages by `offset`. A list is not an async iterator. For one collection, use `client.documents.tools.browseDocuments({ collection })` with the collection's name. |
+| `client.documents.delete(id)` | `client.documents.api.deleteDocument(id)` | |
+| `client.documents.pages(id, pages)` | `client.documents.tools.getPageContent(...)` | An MCP tool. It addresses a document by its path, or by its collection and name. |
+| `client.documents.pageImage(id, page)` | `client.documents.tools.viewPages(...)`, `zoomPage(...)` | MCP tools. They return pictures of pages. |
+| `client.documents.outline(id)` | `client.documents.api.getTree(id)` | The tree has a different shape. |
+| `client.documents.makeOutline(id)` | `client.documents.api.buildOutlineIndex(id)` | |
+| `client.collections.create(name)` | `client.documents.api.createCollection({ name })` | |
+| `client.collections.list()` | `client.documents.api.listCollections()` | Returns all collections at once. |
+| `client.collections.delete(collection)` | `client.documents.api.deleteCollection(id)` | Deletes the documents in the collection too. |
+| `client.tools(options)` | `client.documents.tools` | MCP tools, not tool definitions for your model. |
 
 These methods have no replacement yet. If you use them, keep `@pageindex/search` for them:
 

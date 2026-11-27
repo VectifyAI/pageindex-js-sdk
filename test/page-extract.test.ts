@@ -10,6 +10,7 @@ import {
   it,
   vi,
 } from "vitest";
+import { PageIndexClient } from "../src/client.js";
 import { PageIndexError } from "../src/errors.js";
 import { PageExtractClient } from "../src/page-extract.js";
 import { type SentRequest, serve } from "./helpers.js";
@@ -441,6 +442,15 @@ describe("PageExtractClient.extract", () => {
     await expect(client().extract("pi-1", object)).rejects.toThrow(
       "read extract job ext_1",
     );
+  });
+});
+
+describe("PageExtractClient.documents", () => {
+  it("is the PageIndexClient given, and pageindex is the same", () => {
+    const pageindex = new PageIndexClient({ apiKey: "k" });
+    const client = new PageExtractClient({ client: pageindex });
+    expect(client.documents).toBe(pageindex);
+    expect(client.pageindex).toBe(pageindex);
   });
 });
 

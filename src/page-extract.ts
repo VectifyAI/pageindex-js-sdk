@@ -74,19 +74,24 @@ export interface WaitExtractOptions {
  *
  * A file is uploaded to the "Page Extract" collection, with no outline index
  * built. The documents are the ones `PageIndexClient` and `PageSearchClient`
- * see with the same key; `client.pageindex` is that `PageIndexClient`.
+ * see with the same key; `client.documents` is that `PageIndexClient`.
  */
 export class PageExtractClient {
-  readonly pageindex: PageIndexClient;
+  readonly documents: PageIndexClient;
   /** Collection IDs found or made, by the name or ID they were asked for. */
   private readonly collections = new Map<string, string>();
 
   constructor(config: ProductClientConfig = {}) {
-    this.pageindex = productClient(
+    this.documents = productClient(
       config,
       "PageExtractClient",
       "PAGEINDEX_EXTRACT_API_KEY",
     );
+  }
+
+  /** @deprecated Use `documents`. */
+  get pageindex(): PageIndexClient {
+    return this.documents;
   }
 
   /**
@@ -111,7 +116,7 @@ export class PageExtractClient {
     schema: JsonSchema,
     options: PageExtractOptions = {},
   ): Promise<ExtractJob<T>> {
-    const api = this.pageindex.api;
+    const api = this.documents.api;
     const configuration = configurationOf(schema, options);
     const timeout = options.timeout ?? DEFAULT_TIMEOUT;
     const deadline = Date.now() + timeout;
@@ -203,18 +208,18 @@ export class PageExtractClient {
   ): Promise<ExtractJob<T>> {
     const timeout = options.timeout ?? DEFAULT_TIMEOUT;
     const deadline = Date.now() + timeout;
-    const job = await this.pageindex.api.getExtract<T>(jobId, options.signal);
+    const job = await this.documents.api.getExtract<T>(jobId, options.signal);
     return this.done(job, deadline, timeout, options.signal);
   }
 
   /** An extract job, with its result once it is completed. */
   getExtract<T = unknown>(jobId: string): Promise<ExtractJob<T>> {
-    return this.pageindex.api.getExtract<T>(jobId);
+    return this.documents.api.getExtract<T>(jobId);
   }
 
   /** Your extract jobs, newest first, without their results. */
   listExtracts(options?: ListExtractsOptions): Promise<ListExtractsResponse> {
-    return this.pageindex.api.listExtracts(options);
+    return this.documents.api.listExtracts(options);
   }
 
   /**
@@ -224,7 +229,7 @@ export class PageExtractClient {
    * 409.
    */
   cancelExtract(jobId: string): Promise<ExtractJob> {
-    return this.pageindex.api.cancelExtract(jobId);
+    return this.documents.api.cancelExtract(jobId);
   }
 
   /**
@@ -232,7 +237,7 @@ export class PageExtractClient {
    * uploaded with a job deleted before it completes stays failed.
    */
   deleteExtract(jobId: string): Promise<DeleteExtractResponse> {
-    return this.pageindex.api.deleteExtract(jobId);
+    return this.documents.api.deleteExtract(jobId);
   }
 
   /**
@@ -246,7 +251,7 @@ export class PageExtractClient {
     configuration: ExtractConfiguration,
   ): Promise<SubmitDocumentResponse> {
     const upload = async () =>
-      this.pageindex.api.submitDocument(file.blob, file.fileName, {
+      this.documents.api.submitDocument(file.blob, file.fileName, {
         collectionId: await this.collectionId(collection),
         index: false,
         extract: configuration,
@@ -277,7 +282,7 @@ export class PageExtractClient {
     signal?: AbortSignal,
   ): Promise<ExtractJob<T>> {
     try {
-      return await this.pageindex.api.getExtract<T>(jobId, signal);
+      return await this.documents.api.getExtract<T>(jobId, signal);
     } catch (error) {
       if (signal?.aborted) throw error;
       throw new PageIndexError(
@@ -295,7 +300,7 @@ export class PageExtractClient {
     timeout: number,
     signal?: AbortSignal,
   ): Promise<ExtractJob<T>> {
-    const api = this.pageindex.api;
+    const api = this.documents.api;
     let current = job;
     while (current.status === "pending" || current.status === "running") {
       if (Date.now() > deadline) {
@@ -335,7 +340,7 @@ export class PageExtractClient {
     if (collection === null) return undefined;
     const cached = this.collections.get(collection);
     if (cached !== undefined) return cached;
-    const api = this.pageindex.api;
+    const api = this.documents.api;
     const name = collection.trim().toLowerCase();
     const stored = async () =>
       (await api.listCollections()).collections.find(

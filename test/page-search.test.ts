@@ -349,9 +349,9 @@ describe("PageSearchClient", () => {
 
   it("works through a PageIndexClient, and refuses a key beside it", () => {
     const pageindex = new PageIndexClient({ apiKey: "k" });
-    expect(new PageSearchClient({ client: pageindex }).pageindex).toBe(
-      pageindex,
-    );
+    const client = new PageSearchClient({ client: pageindex });
+    expect(client.documents).toBe(pageindex);
+    expect(client.pageindex).toBe(pageindex);
     expect(
       () =>
         // biome-ignore lint/suspicious/noExplicitAny: invalid on purpose
