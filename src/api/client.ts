@@ -2,7 +2,6 @@ import { PageIndexError, type PageIndexErrorCode } from "../errors.js";
 import { sleep } from "../internal.js";
 import { fetchWithRetry } from "../retry.js";
 import type {
-  BuildOutlineIndexOptions,
   BuildOutlineIndexResponse,
   ChatCompletionChunk,
   ChatCompletionsParams,
@@ -26,6 +25,7 @@ import type {
   ListExtractsResponse,
   ListFoldersOptions,
   ListFoldersResponse,
+  OutlineResponse,
   SearchDocumentsOptions,
   SearchDocumentsResponse,
   SearchPagesOptions,
@@ -143,19 +143,33 @@ export class PageIndexApi {
   }
 
   /**
-   * Starts building the document's outline index, as `options.outlineMode`
-   * says; a document stored without one (`index: false`) gets a sequential
-   * outline by default. Charged as an upload that builds its index. Read
+   * Starts building the outline index of a document stored without one
+   * (`index: false`). Charged as an upload that builds its index. Read
    * `getTree()`'s `index_status` to see when it is built.
    */
-  async buildOutlineIndex(
+  async buildOutlineIndex(docId: string): Promise<BuildOutlineIndexResponse> {
+    return this.request<BuildOutlineIndexResponse>(
+      `/doc/${encodeURIComponent(docId)}/index`,
+      { method: "POST" },
+    );
+  }
+
+  /**
+   * Returns the document's outline when it has it, free, and starts building
+   * it otherwise. `"flat"` lists the headings at one level, at $1 per 1,000
+   * pages; `"hierarchical"` nests them, each with its `level`, at $2, or $1
+   * for a document with a flat outline. A hierarchical outline serves as the
+   * flat one. Once `getTree()`'s `index_status` is `"completed"`, ask again
+   * for the outline.
+   */
+  async outline(
     docId: string,
-    options?: BuildOutlineIndexOptions,
-  ): Promise<BuildOutlineIndexResponse> {
-    return this.requestJson<BuildOutlineIndexResponse>(
+    structure: "flat" | "hierarchical",
+  ): Promise<OutlineResponse> {
+    return this.requestJson<OutlineResponse>(
       "POST",
       `/doc/${encodeURIComponent(docId)}/index`,
-      { outline_mode: options?.outlineMode },
+      { structure },
     );
   }
 

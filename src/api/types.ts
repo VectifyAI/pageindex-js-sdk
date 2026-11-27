@@ -106,20 +106,25 @@ export interface GetTreeResponse {
   result?: TreeNode[];
 }
 
-export interface BuildOutlineIndexOptions {
-  /**
-   * `"sequential"` nests the headings by level; `"parallel"` puts every
-   * heading at one level. The document gets an outline of that mode, and
-   * keeps the one it has if it is of that mode already. Without it, a
-   * document that has its index keeps it, and one that has none gets a
-   * sequential outline.
-   */
-  outlineMode?: "parallel" | "sequential";
-}
-
 export interface BuildOutlineIndexResponse {
   doc_id: string;
   index_status: "queued" | "processing" | "completed";
+}
+
+/** A heading of an outline, in reading order. `level` is 1 for a top heading; a flat outline has none. */
+export interface OutlineHeading {
+  title: string;
+  level?: number;
+  page: number;
+}
+
+export interface OutlineResponse extends BuildOutlineIndexResponse {
+  /** What this request costs, in credits, charged once the outline is built. */
+  usage?: { credits: number };
+  /** The document's page count, once `index_status` is `"completed"`. */
+  pages?: number;
+  /** The headings, once `index_status` is `"completed"`. */
+  outline?: OutlineHeading[];
 }
 
 export interface ChatCompletionsParams {
