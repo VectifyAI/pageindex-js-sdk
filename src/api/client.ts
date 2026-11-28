@@ -2,7 +2,7 @@ import { PageIndexError, type PageIndexErrorCode } from "../errors.js";
 import { sleep } from "../internal.js";
 import { fetchWithRetry } from "../retry.js";
 import type {
-  BuildOutlineIndexResponse,
+  BuildOutlineResponse,
   ChatCompletionChunk,
   ChatCompletionsParams,
   ChatCompletionsResponse,
@@ -67,6 +67,9 @@ export class PageIndexApi {
     formData.append("file", blob, fileName);
     if (options?.index === false) {
       formData.append("algorithm", "none");
+    }
+    if (options?.outlineStructure !== undefined) {
+      formData.append("outline_structure", options.outlineStructure);
     }
     const folderId =
       options?.folderId ??
@@ -143,24 +146,31 @@ export class PageIndexApi {
   }
 
   /**
-   * Starts building the outline index of a document stored without one
-   * (`index: false`), charged as an upload that builds its index. With
-   * `structure`, starts building that outline unless the document has it:
-   * `"flat"` lists the headings at one level, at $1 per 1,000 pages;
+   * Starts building the outline of a document stored without one
+   * (`index: false`), charged as an upload that builds it. With
+   * `outlineStructure`, starts building that outline unless the document has
+   * it: `"flat"` lists the headings at one level, at $1 per 1,000 pages;
    * `"hierarchical"` nests them, each with its `level`, at $2, or $1 for a
    * document with a flat outline. A hierarchical outline serves as the flat
    * one. Once `getOutline()`'s `index_status` is `"completed"`, its `result`
-   * is the outline, and its `structure` tells whether it is the one asked for:
-   * a build that fails keeps the outline the document had.
+   * is the outline, and its `outline_structure` tells whether it is the one
+   * asked for: a build that fails keeps the outline the document had.
    */
-  async buildOutlineIndex(
+  async buildOutline(
     docId: string,
-    structure?: "flat" | "hierarchical",
-  ): Promise<BuildOutlineIndexResponse> {
+    outlineStructure?: "flat" | "hierarchical",
+  ): Promise<BuildOutlineResponse> {
     const path = `/doc/${encodeURIComponent(docId)}/index`;
-    return structure
-      ? this.requestJson<BuildOutlineIndexResponse>("POST", path, { structure })
-      : this.request<BuildOutlineIndexResponse>(path, { method: "POST" });
+    return outlineStructure
+      ? this.requestJson<BuildOutlineResponse>("POST", path, {
+          outline_structure: outlineStructure,
+        })
+      : this.request<BuildOutlineResponse>(path, { method: "POST" });
+  }
+
+  /** @deprecated Use `buildOutline()`. */
+  async buildOutlineIndex(docId: string): Promise<BuildOutlineResponse> {
+    return this.buildOutline(docId);
   }
 
   async getOutline(docId: string): Promise<GetOutlineResponse> {

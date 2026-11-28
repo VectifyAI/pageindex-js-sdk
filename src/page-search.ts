@@ -177,9 +177,9 @@ export class PageSearchClient {
   }
 
   /**
-   * Uploads a PDF to search. Its pages are stored and no outline index is
+   * Uploads a PDF to search. Its pages are stored and no outline is
    * built, so the upload is charged less than one that builds it;
-   * `client.documents.api.buildOutlineIndex()` builds one later. Uploading the
+   * `client.documents.api.buildOutline()` builds one later. Uploading the
    * same file to the same place again returns the stored document.
    */
   async upload(

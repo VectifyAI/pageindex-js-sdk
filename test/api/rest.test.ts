@@ -49,6 +49,14 @@ describe("submitDocument", () => {
     expect(sent[0]?.form).toEqual({ folder_id: "f-scope" });
   });
 
+  it("names the outline the upload builds", async () => {
+    const sent = serve(() => ({ doc_id: "pi-1" }));
+    await api().submitDocument(new Uint8Array([1]), "a.pdf", {
+      outlineStructure: "hierarchical",
+    });
+    expect(sent[0]?.form).toEqual({ outline_structure: "hierarchical" });
+  });
+
   it("sends an extraction to start with the upload", async () => {
     const sent = serve(() => ({ doc_id: "pi-1", extract_job_id: "ext_1" }));
     const configuration = { data_schema: { type: "object" }, tier: "pro" };
@@ -211,22 +219,24 @@ describe("extract jobs", () => {
   });
 });
 
-describe("collections and outline index", () => {
-  it("lists, creates and deletes collections, and builds an index", async () => {
+describe("collections and outlines", () => {
+  it("lists, creates and deletes collections, and builds an outline", async () => {
     const sent = serve(() => ({}));
     const client = api();
     await client.listCollections();
     await client.createCollection({ name: "Invoices" });
     await client.deleteCollection("c/1");
+    await client.buildOutline("pi-1");
+    await client.buildOutline("pi-1", "hierarchical");
     await client.buildOutlineIndex("pi-1");
-    await client.buildOutlineIndex("pi-1", "hierarchical");
     await client.getOutline("pi-1");
     expect(sent.map((r) => [r.method, r.path, r.json])).toEqual([
       ["GET", "/collections/", undefined],
       ["POST", "/collection/", { name: "Invoices" }],
       ["DELETE", "/collection/c%2F1/", undefined],
       ["POST", "/doc/pi-1/index", undefined],
-      ["POST", "/doc/pi-1/index", { structure: "hierarchical" }],
+      ["POST", "/doc/pi-1/index", { outline_structure: "hierarchical" }],
+      ["POST", "/doc/pi-1/index", undefined],
       ["GET", "/doc/pi-1/?type=outline", undefined],
     ]);
   });
