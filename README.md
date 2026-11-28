@@ -64,6 +64,7 @@ If you do not pass `apiKey`, the client reads `PAGEINDEX_API_KEY`. If that varia
 | `getTree(docId, options?)`                 | Get tree structure and processing status        |
 | `buildOutline(docId, outlineStructure?)`   | Build a missing, flat or hierarchical outline   |
 | `getOutline(docId)`                        | Get the page count and outline headings         |
+| `waitOutline(docId, outlineStructure?)`    | Wait until a document's outline is built        |
 | `getDocument(docId)`                       | Get document metadata                           |
 | `listDocuments(options?)`                  | List documents (paginated)                      |
 | `deleteDocument(docId)`                    | Delete a document                               |
@@ -81,7 +82,7 @@ If you do not pass `apiKey`, the client reads `PAGEINDEX_API_KEY`. If that varia
 | `deleteExtract(jobId)`                     | Delete an extract job                           |
 | `chatCompletions(params)`                  | Chat with documents (streaming & non-streaming) |
 
-`submitDocument` takes `{ outlineStructure: "hierarchical" }` to build an outline whose headings are nested, each with its level, in place of the flat one. It takes `{ index: false }` to store the pages and build no outline. Such an upload costs less. `buildOutline()` builds the outline later. With `index: false`, `extract` starts an extract job on the uploaded PDF, and the upload is not charged on its own.
+`submitDocument` takes `{ outlineStructure: "hierarchical" }` to build an outline whose headings are nested, each with its level, in place of the flat one; `waitOutline(docId, "hierarchical")` waits until it is built. It takes `{ index: false }` to store the pages and build no outline. Such an upload costs less. `buildOutline()` builds the outline later. With `index: false`, `extract` starts an extract job on the uploaded PDF, and the upload is not charged on its own.
 
 ## Page Search (`PageSearchClient`)
 

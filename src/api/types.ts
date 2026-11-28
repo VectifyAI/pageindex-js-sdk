@@ -17,7 +17,8 @@ export interface SubmitDocumentOptions {
    * The outline the upload builds: `"flat"` (the default) lists the headings
    * at one level, at $1 per 1,000 pages; `"hierarchical"` nests them, each
    * with its `level`, at $2. A file that is stored already gets the outline
-   * named.
+   * named. `waitOutline()` waits until it is built. With `index: false` the
+   * upload rejects with status 400.
    */
   outlineStructure?: "flat" | "hierarchical";
   /**

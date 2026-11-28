@@ -152,9 +152,10 @@ export class PageIndexApi {
    * it: `"flat"` lists the headings at one level, at $1 per 1,000 pages;
    * `"hierarchical"` nests them, each with its `level`, at $2, or $1 for a
    * document with a flat outline. A hierarchical outline serves as the flat
-   * one. Once `getOutline()`'s `index_status` is `"completed"`, its `result`
-   * is the outline, and its `outline_structure` tells whether it is the one
-   * asked for: a build that fails keeps the outline the document had.
+   * one. `waitOutline()` waits for the build: once `getOutline()`'s
+   * `index_status` is `"completed"`, its `result` is the outline, and its
+   * `outline_structure` tells whether it is the one asked for, since a build
+   * that fails keeps the outline the document had.
    */
   async buildOutline(
     docId: string,
@@ -173,10 +174,63 @@ export class PageIndexApi {
     return this.buildOutline(docId);
   }
 
-  async getOutline(docId: string): Promise<GetOutlineResponse> {
+  async getOutline(
+    docId: string,
+    signal?: AbortSignal,
+  ): Promise<GetOutlineResponse> {
     return this.request<GetOutlineResponse>(
       `/doc/${encodeURIComponent(docId)}/?type=outline`,
+      { signal },
     );
+  }
+
+  /**
+   * Waits until a document's outline is built, and returns it as
+   * `getOutline()` does. Rejects if it could not be built, if it is not the
+   * `outlineStructure` asked for (a build that fails keeps the outline the
+   * document had), or if it is not done within `timeout` (it goes on in the
+   * cloud).
+   */
+  async waitOutline(
+    docId: string,
+    outlineStructure?: "flat" | "hierarchical",
+    options?: WaitDocumentOptions,
+  ): Promise<GetOutlineResponse> {
+    const timeout = options?.timeout ?? DEFAULT_DOCUMENT_TIMEOUT;
+    const deadline = Date.now() + timeout;
+    let interval = 2000;
+    while (true) {
+      const read = await this.getOutline(docId, options?.signal);
+      const status = read.index_status;
+      if (status === "completed") {
+        const built = read.outline_structure;
+        if (
+          outlineStructure &&
+          built !== outlineStructure &&
+          built !== "hierarchical"
+        ) {
+          throw new PageIndexError(
+            `The ${outlineStructure} outline could not be built (doc_id: ${docId}); the document keeps the outline it had.`,
+            "INTERNAL_ERROR",
+          );
+        }
+        return read;
+      }
+      if (status !== "queued" && status !== "processing") {
+        throw new PageIndexError(
+          `The outline could not be built (doc_id: ${docId}, index_status: ${status}).`,
+          "INTERNAL_ERROR",
+        );
+      }
+      if (Date.now() >= deadline) {
+        throw new PageIndexError(
+          `Timed out after ${Math.round(timeout / 1000)}s waiting for the outline (doc_id: ${docId}, index_status: ${status}). It goes on being built in the cloud; read getOutline() for its status.`,
+          "INTERNAL_ERROR",
+        );
+      }
+      await sleep(interval, options?.signal);
+      interval = Math.min(interval * 1.5, 15_000);
+    }
   }
 
   async getDocument(

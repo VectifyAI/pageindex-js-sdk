@@ -281,6 +281,47 @@ describe("waitDocument", () => {
   });
 });
 
+describe("waitOutline", () => {
+  it("polls until the outline is built, and returns it", async () => {
+    const statuses = ["queued", "processing", "completed"];
+    const sent = serve(() => ({
+      doc_id: "pi-1",
+      index_status: statuses.shift(),
+      outline_structure: "hierarchical",
+      result: { pages: 2, outline: [] },
+    }));
+    const read = await api().waitOutline("pi-1", "hierarchical");
+    expect(read.result?.pages).toBe(2);
+    expect(sent.map((r) => r.path)).toEqual(
+      Array(3).fill("/doc/pi-1/?type=outline"),
+    );
+  });
+
+  it("rejects when the build failed, kept another outline, or ran out of time", async () => {
+    serve(() => ({ doc_id: "pi-1", index_status: "failed" }));
+    await expect(api().waitOutline("pi-1")).rejects.toThrow(
+      "could not be built",
+    );
+
+    serve(() => ({
+      doc_id: "pi-1",
+      index_status: "completed",
+      outline_structure: "flat",
+    }));
+    await expect(api().waitOutline("pi-1", "hierarchical")).rejects.toThrow(
+      "keeps the outline it had",
+    );
+    await expect(api().waitOutline("pi-1", "flat")).resolves.toMatchObject({
+      outline_structure: "flat",
+    });
+
+    serve(() => ({ doc_id: "pi-1", index_status: "processing" }));
+    await expect(
+      api().waitOutline("pi-1", undefined, { timeout: 0 }),
+    ).rejects.toThrow("Timed out after 0s");
+  });
+});
+
 describe("API key", () => {
   it("reads PAGEINDEX_API_KEY first, then the product's own key", () => {
     vi.stubEnv("PAGEINDEX_API_KEY", "");
