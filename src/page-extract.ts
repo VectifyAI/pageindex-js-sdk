@@ -75,7 +75,7 @@ export interface WaitExtractOptions {
  * job.extract_result;
  * ```
  *
- * A file is uploaded to the "Page Extract" collection, with no outline index
+ * A file is uploaded to the "Page Extract" collection, with no outline
  * built. The documents are the ones `PageIndexClient` and `PageSearchClient`
  * see with the same key; `client.documents` is that `PageIndexClient`.
  */
@@ -103,7 +103,7 @@ export class PageExtractClient {
    * @param document The `doc_id` of an uploaded document; one still
    *   processing is waited for first, and with `wait: false` rejects with HTTP
    *   409. Or a file: it is uploaded to `collection` with the job, with no
-   *   outline index built. Only the extraction is charged, once the job
+   *   outline built. Only the extraction is charged, once the job
    *   completes, and the file is kept as a document from then on; a job that
    *   fails or is cancelled is not charged, and leaves a file it uploaded as a
    *   failed document, with its name and file but no pages, until you delete

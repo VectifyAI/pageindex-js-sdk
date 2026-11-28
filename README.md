@@ -62,7 +62,9 @@ If you do not pass `apiKey`, the client reads `PAGEINDEX_API_KEY`. If that varia
 | `submitDocument(file, fileName, options?)` | Upload a document                               |
 | `waitDocument(docId, options?)`            | Wait until a document's processing is done      |
 | `getTree(docId, options?)`                 | Get tree structure and processing status        |
-| `buildOutlineIndex(docId)`                 | Build a missing outline index                   |
+| `buildOutline(docId, outlineStructure?)`   | Build a missing, flat or hierarchical outline   |
+| `getOutline(docId)`                        | Get the page count and outline headings         |
+| `waitOutline(docId, outlineStructure?)`    | Wait until a document's outline is built        |
 | `getDocument(docId)`                       | Get document metadata                           |
 | `listDocuments(options?)`                  | List documents (paginated)                      |
 | `deleteDocument(docId)`                    | Delete a document                               |
@@ -80,7 +82,7 @@ If you do not pass `apiKey`, the client reads `PAGEINDEX_API_KEY`. If that varia
 | `deleteExtract(jobId)`                     | Delete an extract job                           |
 | `chatCompletions(params)`                  | Chat with documents (streaming & non-streaming) |
 
-`submitDocument` takes `{ index: false }` to store the pages and build no outline index. Such an upload costs less. `buildOutlineIndex()` builds the index later. With `index: false`, `extract` starts an extract job on the uploaded PDF, and the upload is not charged on its own.
+`submitDocument` takes `{ outlineStructure: "hierarchical" }` to build an outline whose headings are nested, each with its level, in place of the flat one; `waitOutline(docId, "hierarchical")` waits until it is built. It takes `{ index: false }` to store the pages and build no outline. Such an upload costs less. `buildOutline()` builds the outline later. With `index: false`, `extract` starts an extract job on the uploaded PDF, and the upload is not charged on its own.
 
 ## Page Search (`PageSearchClient`)
 
@@ -91,7 +93,7 @@ import { PageSearchClient } from '@pageindex/sdk';
 
 const search = new PageSearchClient(); // Reads PAGEINDEX_API_KEY
 
-// Upload a PDF. Its pages are stored and no outline index is built.
+// Upload a PDF. Its pages are stored and no outline is built.
 const { doc_id } = await search.upload({ path: './report.pdf' });
 
 // Search one document's pages

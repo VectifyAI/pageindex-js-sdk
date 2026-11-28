@@ -2,7 +2,7 @@ import { PageIndexError, type PageIndexErrorCode } from "../errors.js";
 import { sleep } from "../internal.js";
 import { fetchWithRetry } from "../retry.js";
 import type {
-  BuildOutlineIndexResponse,
+  BuildOutlineResponse,
   ChatCompletionChunk,
   ChatCompletionsParams,
   ChatCompletionsResponse,
@@ -16,6 +16,7 @@ import type {
   DeleteExtractResponse,
   ExtractJob,
   GetDocumentMetadataResponse,
+  GetOutlineResponse,
   GetTreeOptions,
   GetTreeResponse,
   ListCollectionsResponse,
@@ -66,6 +67,9 @@ export class PageIndexApi {
     formData.append("file", blob, fileName);
     if (options?.index === false) {
       formData.append("algorithm", "none");
+    }
+    if (options?.outlineStructure !== undefined) {
+      formData.append("outline_structure", options.outlineStructure);
     }
     const folderId =
       options?.folderId ??
@@ -142,15 +146,91 @@ export class PageIndexApi {
   }
 
   /**
-   * Starts building the outline index of a document stored without one
-   * (`index: false`). Charged as an upload that builds its index. Read
-   * `getTree()`'s `index_status` to see when it is built.
+   * Starts building the outline of a document stored without one
+   * (`index: false`), charged as an upload that builds it. With
+   * `outlineStructure`, starts building that outline unless the document has
+   * it: `"flat"` lists the headings at one level, at $1 per 1,000 pages;
+   * `"hierarchical"` nests them, each with its `level`, at $2, or $1 for a
+   * document with a flat outline. A hierarchical outline serves as the flat
+   * one. `waitOutline()` waits for the build: once `getOutline()`'s
+   * `index_status` is `"completed"`, its `result` is the outline, and its
+   * `outline_structure` tells whether it is the one asked for, since a build
+   * that fails keeps the outline the document had.
    */
-  async buildOutlineIndex(docId: string): Promise<BuildOutlineIndexResponse> {
-    return this.request<BuildOutlineIndexResponse>(
-      `/doc/${encodeURIComponent(docId)}/index`,
-      { method: "POST" },
+  async buildOutline(
+    docId: string,
+    outlineStructure?: "flat" | "hierarchical",
+  ): Promise<BuildOutlineResponse> {
+    const path = `/doc/${encodeURIComponent(docId)}/index`;
+    return outlineStructure
+      ? this.requestJson<BuildOutlineResponse>("POST", path, {
+          outline_structure: outlineStructure,
+        })
+      : this.request<BuildOutlineResponse>(path, { method: "POST" });
+  }
+
+  /** @deprecated Use `buildOutline()`. */
+  async buildOutlineIndex(docId: string): Promise<BuildOutlineResponse> {
+    return this.buildOutline(docId);
+  }
+
+  async getOutline(
+    docId: string,
+    signal?: AbortSignal,
+  ): Promise<GetOutlineResponse> {
+    return this.request<GetOutlineResponse>(
+      `/doc/${encodeURIComponent(docId)}/?type=outline`,
+      { signal },
     );
+  }
+
+  /**
+   * Waits until a document's outline is built, and returns it as
+   * `getOutline()` does. Rejects if it could not be built, if it is not the
+   * `outlineStructure` asked for (a build that fails keeps the outline the
+   * document had), or if it is not done within `timeout` (it goes on in the
+   * cloud).
+   */
+  async waitOutline(
+    docId: string,
+    outlineStructure?: "flat" | "hierarchical",
+    options?: WaitDocumentOptions,
+  ): Promise<GetOutlineResponse> {
+    const timeout = options?.timeout ?? DEFAULT_DOCUMENT_TIMEOUT;
+    const deadline = Date.now() + timeout;
+    let interval = 2000;
+    while (true) {
+      const read = await this.getOutline(docId, options?.signal);
+      const status = read.index_status;
+      if (status === "completed") {
+        const built = read.outline_structure;
+        if (
+          outlineStructure &&
+          built !== outlineStructure &&
+          built !== "hierarchical"
+        ) {
+          throw new PageIndexError(
+            `The ${outlineStructure} outline could not be built (doc_id: ${docId}); the document keeps the outline it had.`,
+            "INTERNAL_ERROR",
+          );
+        }
+        return read;
+      }
+      if (status !== "queued" && status !== "processing") {
+        throw new PageIndexError(
+          `The outline could not be built (doc_id: ${docId}, index_status: ${status}).`,
+          "INTERNAL_ERROR",
+        );
+      }
+      if (Date.now() >= deadline) {
+        throw new PageIndexError(
+          `Timed out after ${Math.round(timeout / 1000)}s waiting for the outline (doc_id: ${docId}, index_status: ${status}). It goes on being built in the cloud; read getOutline() for its status.`,
+          "INTERNAL_ERROR",
+        );
+      }
+      await sleep(interval, options?.signal);
+      interval = Math.min(interval * 1.5, 15_000);
+    }
   }
 
   async getDocument(

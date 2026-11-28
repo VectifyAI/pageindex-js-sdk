@@ -156,7 +156,7 @@ export interface PageSearchDocumentsOptions {
  * await client.search("What was revenue in 2024?", { document: doc.doc_id });
  * ```
  *
- * `upload()` stores a document's pages and builds no outline index. The
+ * `upload()` stores a document's pages and builds no outline. The
  * documents are the ones `PageIndexClient` and `PageExtractClient` see with
  * the same key; `client.documents` is that `PageIndexClient`.
  */
@@ -177,9 +177,9 @@ export class PageSearchClient {
   }
 
   /**
-   * Uploads a PDF to search. Its pages are stored and no outline index is
+   * Uploads a PDF to search. Its pages are stored and no outline is
    * built, so the upload is charged less than one that builds it;
-   * `client.documents.api.buildOutlineIndex()` builds one later. Uploading the
+   * `client.documents.api.buildOutline()` builds one later. Uploading the
    * same file to the same place again returns the stored document.
    */
   async upload(

@@ -8,11 +8,19 @@ export interface SubmitDocumentOptions {
   collectionId?: string;
   metadata?: DocumentTags;
   /**
-   * `false` stores the document's pages and builds no outline index: the
-   * upload is charged less, and `buildOutlineIndex()` builds the index later.
-   * Defaults to `true`.
+   * `false` stores the document's pages and builds no outline: the upload is
+   * charged less, and `buildOutline()` builds the outline later. Defaults to
+   * `true`.
    */
   index?: boolean;
+  /**
+   * The outline the upload builds: `"flat"` (the default) lists the headings
+   * at one level, at $1 per 1,000 pages; `"hierarchical"` nests them, each
+   * with its `level`, at $2. A file that is stored already gets the outline
+   * named. `waitOutline()` waits until it is built. With `index: false` the
+   * upload rejects with status 400.
+   */
+  outlineStructure?: "flat" | "hierarchical";
   /**
    * With a PDF and `index: false`: an extract job's configuration, as
    * `createExtract()` takes it. The job starts on the document, its id is the
@@ -101,14 +109,37 @@ export interface GetTreeResponse {
   doc_id: string;
   status: string;
   retrieval_ready?: boolean;
-  /** `"skipped"` for a document stored without an outline index. */
+  /** `"skipped"` for a document stored without an outline. */
   index_status?: string;
   result?: TreeNode[];
 }
 
-export interface BuildOutlineIndexResponse {
+export interface BuildOutlineResponse {
   doc_id: string;
   index_status: "queued" | "processing" | "completed";
+  /** What this request costs, in credits, charged once the outline is built. */
+  usage?: { credits: number };
+}
+
+/** @deprecated Use `BuildOutlineResponse`. */
+export type BuildOutlineIndexResponse = BuildOutlineResponse;
+
+/** A heading of an outline, in reading order. `level` is 1 for a top heading; a flat outline has none. */
+export interface OutlineHeading {
+  title: string;
+  level?: number;
+  page: number;
+}
+
+export interface GetOutlineResponse {
+  doc_id: string;
+  status: string;
+  retrieval_ready?: boolean;
+  index_status?: string;
+  /** The document's page count and its headings; `null` before it has an outline. */
+  result?: { pages: number; outline: OutlineHeading[] } | null;
+  /** Which outline `result` is; `null` for a Flash or v1 tree. After a failed build, the document keeps the outline it had. */
+  outline_structure?: "flat" | "hierarchical" | null;
 }
 
 export interface ChatCompletionsParams {
