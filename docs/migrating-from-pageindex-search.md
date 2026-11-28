@@ -50,8 +50,8 @@ In the new column, `client` is a `PageSearchClient`, and `client.documents` is i
 | `client.documents.delete(id)` | `client.documents.api.deleteDocument(id)` | |
 | `client.documents.pages(id, pages)` | `client.documents.tools.getPageContent(...)` | An MCP tool. It addresses a document by its path, or by its collection and name. |
 | `client.documents.pageImage(id, page)` | `client.documents.tools.viewPages(...)`, `zoomPage(...)` | MCP tools. They return pictures of pages. |
-| `client.documents.outline(id)` | `client.documents.api.getTree(id)` | The tree has a different shape. |
-| `client.documents.makeOutline(id)` | `client.documents.api.buildOutlineIndex(id)` | |
+| `client.documents.outline(id)` | `client.documents.api.getOutline(id)` | Its `result` holds the page count and the headings, each with its page. |
+| `client.documents.makeOutline(id)` | `client.documents.api.buildOutline(id)` | |
 | `client.collections.create(name)` | `client.documents.api.createCollection({ name })` | |
 | `client.collections.list()` | `client.documents.api.listCollections()` | Returns all collections at once. |
 | `client.collections.delete(collection)` | `client.documents.api.deleteCollection(id)` | Deletes the documents in the collection too. |

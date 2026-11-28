@@ -108,7 +108,7 @@ export interface GetTreeResponse {
   doc_id: string;
   status: string;
   retrieval_ready?: boolean;
-  /** `"skipped"` for a document stored without an outline index. */
+  /** `"skipped"` for a document stored without an outline. */
   index_status?: string;
   result?: TreeNode[];
 }

@@ -92,7 +92,7 @@ import { PageSearchClient } from '@pageindex/sdk';
 
 const search = new PageSearchClient(); // Reads PAGEINDEX_API_KEY
 
-// Upload a PDF. Its pages are stored and no outline index is built.
+// Upload a PDF. Its pages are stored and no outline is built.
 const { doc_id } = await search.upload({ path: './report.pdf' });
 
 // Search one document's pages
